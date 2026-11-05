@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Construir una oficina virtual web que permita a Ariel abrir un encargo, ver al Orquestador formar el equipo, enviar trabajo real a Qwen y DeepSeek, supervisar los resultados y guardar recursos seleccionados para reutilizarlos.
+Construir una oficina virtual web que permita a Ariel abrir un encargo, ver al Orquestador nativo formar el equipo, enviar trabajo real a Qwen y DeepSeek, supervisar los resultados y guardar recursos seleccionados para reutilizarlos.
 
 ## Debe funcionar en el MVP
 
@@ -12,8 +12,8 @@ Construir una oficina virtual web que permita a Ariel abrir un encargo, ver al O
 - Plan breve del Orquestador, editable antes de ejecutar en tareas de mayor impacto.
 - Equipo bajo demanda con perfiles predefinidos y capacidad de crear un agente temporal.
 - Biblioteca inicial de agentes, herramientas y scripts; búsqueda y recuperación selectiva como colaboradores.
-- Gemini nativo como Orquestador en AI Studio; Codex nativo como Orquestador en Codex si el adaptador está disponible.
-- Qwen y DeepSeek como conectores reales de agentes especialistas, configurables en servidor.
+- Orquestador nativo: Claude en Claude Code o ChatGPT en Codex, con las mismas instrucciones y herramientas (`oficina-mcp`).
+- Qwen y DeepSeek como conectores reales de agentes especialistas por API, configurables en servidor, con relevo nativo registrado.
 - Conversación o instrucciones directas al agente del encargo, estado y panel de actividad.
 - Persistencia local del usuario, exportación de encargos y continuidad de la biblioteca.
 - Entregables descargables y registro del origen de resultados.

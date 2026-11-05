@@ -4,7 +4,7 @@
 
 **Ariel_OS_v1.0:** https://github.com/Arielromero13/Ariel_OS_v1.0
 
-Google AI Studio y otros agentes de desarrollo deben inspeccionar la rama principal actual antes de reutilizar código. El repositorio de origen es público y sirve para ver con detalle los avances anteriores.
+Los agentes de desarrollo deben inspeccionar la rama principal actual antes de reutilizar código. El repositorio de origen es público y sirve para ver con detalle los avances anteriores.
 
 ## Archivos de orientación
 
