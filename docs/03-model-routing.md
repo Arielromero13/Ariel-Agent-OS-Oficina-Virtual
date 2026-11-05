@@ -51,6 +51,6 @@ El relevo nativo está permitido por defecto porque mantiene los datos en el pro
 
 ## Protección de datos
 
-En la fase de validación se trabaja con datos anonimizados. Cada encargo tiene una marca de sensibilidad; los encargos marcados como internos no se envían a APIs externas y se resuelven en la sesión nativa.
+En la fase de validación se trabaja con datos sin información identificable (anonimizados o, como en el encargo de calidad de energía, numéricos sin planta, propietario ni ubicación). Cada encargo tiene una marca de sensibilidad; los encargos marcados como internos no se envían a APIs externas y se resuelven en la sesión nativa.
 
 Las claves de API viven en variables de entorno del servidor `oficina-mcp` o en los secretos del entorno de ejecución. Nunca en el cliente web ni en Git.

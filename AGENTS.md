@@ -5,7 +5,7 @@ Antes de implementar o cambiar arquitectura, lee `README.md` y los documentos en
 ## Jerarquía de decisiones
 
 1. La instrucción actual de Ariel.
-2. `docs/00-product-philosophy.md`, `docs/04-mvp-scope.md` y `docs/08-tramo-1.md` (tramo en curso).
+2. `docs/00-product-philosophy.md`, `docs/04-mvp-scope.md` y `docs/08-tramo-1.md` (tramo en curso). Las ideas de `docs/09-tramos-futuros.md` no se implementan mientras no se conviertan en tramo numerado.
 3. `docs/07-arquitectura.md`, el diseño de referencia en `docs/design/` y los documentos de experiencia, memoria, modelos y operación.
 4. El repositorio anterior `Ariel_OS_v1.0`, como referencia de código, roles, ejemplos y flujos existentes.
 

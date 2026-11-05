@@ -30,6 +30,7 @@ La oficina se inspira en la cercanía visual de Habbo Hotel y Roblox: un espacio
 - [Repositorio técnico de referencia](docs/06-source-reference.md)
 - [Arquitectura](docs/07-arquitectura.md)
 - [Tramo 1](docs/08-tramo-1.md)
+- [Tramos futuros](docs/09-tramos-futuros.md)
 - [Diseño de referencia](docs/design/README.md)
 
 ## Prioridad de implementación

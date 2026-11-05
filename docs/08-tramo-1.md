@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Demostrar con un encargo real de datos anonimizados que el ciclo completo funciona: encargo → plan → equipo → ejecución por API → revisión nativa → decisión de Ariel → cierre y guardado. La oficina muestra todo el ciclo a partir de eventos reales.
+Demostrar con un encargo real, con datos sin información identificable, que el ciclo completo funciona: encargo → plan → equipo → ejecución por API → revisión nativa → decisión de Ariel → cierre y guardado. La oficina muestra todo el ciclo a partir de eventos reales.
 
 ## Incluye
 
@@ -18,7 +18,8 @@ Demostrar con un encargo real de datos anonimizados que el ciclo completo funcio
 
 - Enviar instrucciones nuevas al Orquestador desde la web.
 - Edición de fichas desde la interfaz (se editan como archivos en el repositorio).
-- Multiusuario, notificaciones, integración con correo o Drive.
+- Notificaciones, integración con correo o Drive.
+- Las ideas de `09-tramos-futuros.md` (Orquestador por API, VPS, app Android, wizard inicial, recarga de saldo).
 - Animaciones de desplazamiento libre de los personajes más allá de los traslados entre zonas.
 
 ## Criterios de aceptación
@@ -42,4 +43,8 @@ Demostrar con un encargo real de datos anonimizados que el ciclo completo funcio
 
 ## Encargo de prueba
 
-Pendiente de definir por Ariel. Debe usar datos anonimizados, requerir al menos dos agentes y producir un entregable revisable.
+Análisis de calidad de energía a partir de datos numéricos medidos (valores eléctricos con encabezados de columna). Los datos no identifican planta, propietario ni ubicación, por lo que no requieren anonimización. Antes de cargarlos se revisa que los encabezados tampoco contengan nombres de equipos o instalaciones.
+
+El encargo requiere al menos dos agentes y produce un informe revisable. Los cálculos (índices, armónicos, desbalance y similares) se hacen en scripts deterministas; los agentes por API extraen, redactan y consultan normas públicas; el Orquestador revisa e integra.
+
+Cada ejecución registra el gasto en APIs y los minutos de corrección que necesitó Ariel, como línea base para el análisis económico de `09-tramos-futuros.md`. Presupuesto de prueba: 10 USD en Qwen y 10 USD en DeepSeek.

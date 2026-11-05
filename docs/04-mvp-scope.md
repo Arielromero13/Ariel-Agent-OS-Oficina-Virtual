@@ -27,10 +27,12 @@ Cuando una tarea dependa de un método, criterio o norma que no aparece en el ex
 
 ## Posponer
 
-- Mundo 3D completo o multiusuario persistente.
+- Mundo 3D completo.
+- Multiusuario: descartado. Cada usuario tiene su propia oficina (ver `09-tramos-futuros.md`).
 - Agentes siempre activos, memoria de conversación completa o reuniones automáticas en segundo plano.
 - Gestión de costos corporativa avanzada, facturación y presupuestos complejos.
-- Telegram, voz, correo, Google Drive y sincronización entre múltiples usuarios.
+- Telegram, voz, correo y Google Drive.
+- Captura en campo desde Android, Orquestador por API y servidor siempre activo (ver `09-tramos-futuros.md`).
 - Ejecución autónoma de scripts sin autorización.
 - Automatización completa de todos los dominios eléctricos antes de definir y validar sus métodos.
 
