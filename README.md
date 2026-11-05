@@ -11,7 +11,8 @@ La oficina se inspira en la cercanía visual de Habbo Hotel y Roblox: un espacio
 - El **Orquestador** entiende el encargo y reúne un equipo bajo demanda.
 - El **Oficial de RR. HH.** mantiene un catálogo de perfiles, capacidades, instrucciones, herramientas y scripts reutilizables.
 - Los agentes trabajan por tarea, con contexto acotado. El sistema busca en la memoria guardada solo los recursos pertinentes.
-- **Qwen** y **DeepSeek** pueden atender tareas especializadas. El Orquestador es nativo del entorno: Gemini en Google AI Studio y ChatGPT mediante el adaptador de Codex cuando se ejecuta en Codex.
+- El **Orquestador** es la sesión nativa donde se abre el repositorio: Claude en Claude Code o ChatGPT en Codex. Actúa sobre la oficina mediante el servidor `oficina-mcp`.
+- Los **agentes de tarea** se ejecutan por API (Qwen, DeepSeek u otros proveedores compatibles). Si un proveedor se queda sin cuota, el Orquestador puede hacer un **relevo nativo**, que queda registrado como tal.
 - Ariel conserva las decisiones que requieren criterio, revisión o autorización humana.
 
 ## Repositorio técnico de referencia
@@ -27,6 +28,10 @@ La oficina se inspira en la cercanía visual de Habbo Hotel y Roblox: un espacio
 - [Alcance del MVP](docs/04-mvp-scope.md)
 - [Ciclo de trabajo](docs/05-operating-loop.md)
 - [Repositorio técnico de referencia](docs/06-source-reference.md)
+- [Arquitectura](docs/07-arquitectura.md)
+- [Tramo 1](docs/08-tramo-1.md)
+- [Tramos futuros](docs/09-tramos-futuros.md)
+- [Diseño de referencia](docs/design/README.md)
 
 ## Prioridad de implementación
 

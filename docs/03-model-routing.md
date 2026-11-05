@@ -1,33 +1,56 @@
 # Selección de modelos y conectores
 
-## El Orquestador sigue el entorno
+## El Orquestador es la sesión nativa
 
-La lógica del Orquestador y los workflows permanece portable. El entorno entrega el modelo que lo ejecuta:
+El Orquestador no es un servicio que la app llama. Es la sesión de agente de codificación donde Ariel abre este repositorio. Sus instrucciones viven en `AGENTS.md` (leído por Codex) y `CLAUDE.md` (leído por Claude Code, que remite a `AGENTS.md`), y sus herramientas las expone el servidor `oficina-mcp` (ver `07-arquitectura.md`).
 
-| Entorno | Modelo del Orquestador |
-|---|---|
-| Google AI Studio | Gemini nativo de la plataforma. |
-| Codex | ChatGPT mediante el adaptador nativo de Codex CLI o Codex Cloud, cuando el runtime lo proporcione. |
-| Web app independiente | Proveedor configurado explícitamente por el usuario. |
+| Entorno de ejecución | Modelo del Orquestador | Autenticación |
+|---|---|---|
+| Claude Code (terminal o nube) | Claude | Sesión oficial de Claude Code de Ariel. |
+| Codex (CLI o nube) | ChatGPT | Sesión oficial de Codex con la cuenta ChatGPT de Ariel. |
 
-La app no puede asumir que una instalación web externa hereda credenciales de Codex o que ChatGPT Plus incluye acceso a la API de OpenAI. La detección del runtime debe usar configuración confiable, no el navegador o el nombre de la marca.
+Las instrucciones y herramientas son las mismas en ambos entornos. Cambiar de orquestador significa abrir el repositorio en el otro entorno, no modificar código.
 
-## Qwen y DeepSeek
+Restricciones:
 
-Qwen y DeepSeek estarán disponibles como proveedores configurables para especialistas. El Orquestador puede elegir uno por tarea, perfil o costo/beneficio; una revisión independiente puede usar el otro cuando el riesgo lo justifique.
+- La app no extrae, copia ni reutiliza tokens de sesión de Claude Code ni de Codex. Las suscripciones se usan solo a través de sus herramientas oficiales.
+- Una suscripción de chat (ChatGPT Plus, plan de Claude) no equivale a acceso por API. La app no lo asume.
+- El modelo que se muestra en la oficina es el que la sesión reporta, no un valor fijo en la interfaz.
 
-Las claves y llamadas se gestionan en el servidor. Cada invocación registra proveedor, modelo, estado, hora y consumo reportado cuando esté disponible. El usuario puede cambiar el modelo sin reescribir las instrucciones del agente.
+Google AI Studio y Gemini quedaron fuera del alcance del proyecto.
+
+## Agentes por API
+
+Los agentes de tarea se ejecutan mediante APIs de pago con modelos capaces, normalmente de un nivel inferior al del Orquestador. El diseño parte de que un Orquestador fuerte compensa esa diferencia con instrucciones específicas y con revisión de cada resultado.
+
+El servidor `oficina-mcp` implementa un adaptador por tipo de API. El primero es compatible con el formato de OpenAI, que cubre Qwen (DashScope), DeepSeek y la mayoría de los proveedores disponibles. Cada ficha de agente indica proveedor y modelo; cambiar el cerebro de un agente es cambiar ese campo.
+
+Cada invocación registra proveedor, modelo, estado, hora, tokens reportados por el proveedor y el agente que la pidió.
+
+## Relevo nativo
+
+Cuando una llamada por API falla por cuota agotada, saldo, límite de tasa o proveedor no configurado, `oficina-mcp` no cambia de proveedor por su cuenta. Devuelve al Orquestador un estado explícito (`sin_cuota`, `no_configurado`, `error`, `timeout`).
+
+El Orquestador puede entonces ejecutar la subtarea con un subagente propio de la sesión nativa. Ese resultado queda registrado como `relevo_nativo`, con el proveedor original y el motivo. La oficina lo muestra como tal.
+
+El relevo nativo está permitido por defecto porque mantiene los datos en el proveedor que ya atiende el encargo. Puede desactivarse por encargo.
+
+## Reparto de trabajo
+
+- Cálculos numéricos: scripts deterministas, nunca un modelo de lenguaje.
+- Agentes por API: extracción, borradores, consulta de normas públicas, tareas de volumen.
+- Orquestador (nativo): plan, instrucciones a cada agente, revisión de resultados e integración final.
+- Un agente no revisa su propio trabajo. Si el Orquestador produjo una parte por relevo nativo, la revisión de esa parte queda marcada para Ariel.
 
 ## Fallos y configuración
 
-- Un proveedor no configurado aparece como No configurado.
-- Un error, límite de cuota o timeout aparece como Error o Pendiente, con una acción clara.
-- No cambiar de proveedor sin mostrarlo y obtener autorización cuando implique enviar datos a otro servicio.
-- No devolver textos de simulación como si fueran resultados reales.
-- El modo de demostración, si existe, se identifica permanentemente como Demo y usa datos ficticios.
+- Un proveedor sin clave aparece como No configurado y el Orquestador no le asigna tareas.
+- Un error, límite de cuota o timeout aparece como tal, con la acción necesaria.
+- Ningún texto de resultado se genera sin una llamada real detrás. No existen textos de respaldo prefabricados.
+- Un modo demostración, si existe, se identifica permanentemente como Demo y usa datos ficticios.
 
 ## Protección de datos
 
-El navegador nunca recibe ni persiste las claves API. Las claves viven en secretos del backend. Antes de enviar archivos o contenido a un modelo externo, la interfaz indica a qué servicio se enviarán y solicita la autorización que Ariel defina para ese encargo.
+En la fase de validación se trabaja con datos sin información identificable (anonimizados o, como en el encargo de calidad de energía, numéricos sin planta, propietario ni ubicación). Cada encargo tiene una marca de sensibilidad; los encargos marcados como internos no se envían a APIs externas y se resuelven en la sesión nativa.
 
-Los conectores no escriben expedientes reales en GitHub ni los adjuntan automáticamente a correo, Drive o servicios externos. Cualquier distribución externa requiere una aprobación explícita.
+Las claves de API viven en variables de entorno del servidor `oficina-mcp` o en los secretos del entorno de ejecución. Nunca en el cliente web ni en Git.

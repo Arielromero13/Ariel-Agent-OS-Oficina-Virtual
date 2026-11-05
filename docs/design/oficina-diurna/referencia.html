@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+
+<html lang="es"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><meta content="web_blank" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base { html, body { margin: 0; padding: 0; } body { overscroll-behavior: none; } main > :first-child { margin-top: 0 !important; } main > :last-child { margin-bottom: 0 !important; } } ::-webkit-scrollbar { display: none; }</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-secondary-container": "#6c6351", "secondary-fixed-dim": "#d1c5ae", "on-secondary-fixed-variant": "#4e4635", "surface-dim": "#cbdbf5", "surface-container-low": "#eff4ff", "surface-tint": "#006b5f", "on-primary-fixed": "#00201c", "secondary": "#665d4b", "on-error": "#ffffff", "tertiary-container": "#16bb83", "primary-fixed-dim": "#4fdbc8", "primary": "#006b5f", "on-background": "#0b1c30", "tertiary-fixed-dim": "#4edea3", "on-secondary": "#ffffff", "surface-container-high": "#dce9ff", "on-surface-variant": "#3c4947", "surface-bright": "#f8f9ff", "primary-container": "#14b8a6", "on-primary-container": "#00423b", "on-tertiary": "#ffffff", "background": "#f8f9ff", "on-tertiary-fixed": "#002113", "secondary-container": "#eee1c9", "inverse-on-surface": "#eaf1ff", "outline": "#6c7a77", "surface": "#f8f9ff", "error": "#ba1a1a", "surface-container-highest": "#d3e4fe", "on-tertiary-fixed-variant": "#005236", "inverse-primary": "#4fdbc8", "error-container": "#ffdad6", "on-error-container": "#93000a", "on-tertiary-container": "#00442c", "on-secondary-fixed": "#211b0c", "secondary-fixed": "#eee1c9", "surface-container": "#e5eeff", "outline-variant": "#bbcac6", "surface-variant": "#d3e4fe", "tertiary": "#006c49", "tertiary-fixed": "#6ffbbe", "surface-container-lowest": "#ffffff", "inverse-surface": "#213145", "on-surface": "#0b1c30", "on-primary-fixed-variant": "#005048", "primary-fixed": "#71f8e4", "on-primary": "#ffffff" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-xs": "0.25rem", "space-lg": "1.5rem", "margin-mobile": "1rem", "margin": "2rem", "gutter": "1.25rem", "space-xl": "2.5rem", "space-sm": "0.5rem", "space-md": "1rem", "gutter-mobile": "0.75rem" }, "fontFamily": { "headline-md": ["Manrope"], "headline-xl": ["Manrope"], "body-sm": ["Manrope"], "display-lg": ["Manrope"], "body-md": ["Manrope"], "label-md": ["Manrope"], "headline-sm": ["Manrope"], "display-lg-mobile": ["Manrope"], "body-lg": ["Manrope"], "label-xs": ["Manrope"] }, "fontSize": { "headline-md": ["22px", { "lineHeight": "30px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-xl": ["28px", { "lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0.01em", "fontWeight": "500" }], "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "800" }], "body-md": ["14px", { "lineHeight": "22px", "letterSpacing": "0em", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "700" }], "headline-sm": ["18px", { "lineHeight": "26px", "letterSpacing": "0em", "fontWeight": "600" }], "display-lg-mobile": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "800" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "400" }], "label-xs": ["10px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }] } } } };</script></head><body class="bg-surface font-body-md text-body-md text-on-surface select-none overflow-hidden"><div class="fixed top-margin left-margin z-30 flex items-center gap-space-sm bg-surface-container-lowest/90 backdrop-blur-md px-space-md py-space-sm rounded-full shadow-[0_4px_16px_-2px_rgba(100,116,139,0.08)] pointer-events-auto"><span class="material-symbols-outlined text-primary text-[20px]">architecture</span><div class="flex items-center gap-space-xs"><span class="font-label-md text-label-md text-on-surface">Estudio Central — Pasaje Industrial</span><span class="w-1.5 h-1.5 rounded-full bg-tertiary-container ml-space-xs"></span><span class="font-label-xs text-label-xs text-tertiary">En Producción</span></div></div><div class="fixed top-margin right-margin z-30 flex items-center gap-space-md pointer-events-auto"><button class="flex items-center gap-space-xs bg-primary-container hover:bg-primary text-on-primary-container hover:text-on-primary px-space-lg py-space-sm rounded-full font-label-md text-label-md shadow-[0_4px_12px_rgba(20,184,166,0.28)] transition-colors" type="button"><span class="material-symbols-outlined text-[18px]">add</span>Nuevo encargo</button><div class="flex items-center gap-space-xs bg-surface-container-lowest/90 backdrop-blur-md pl-space-md pr-space-xs py-space-xs rounded-full shadow-[0_4px_16px_-2px_rgba(100,116,139,0.08)]"><span class="font-label-md text-label-md text-on-surface">Carlos M.</span><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div><div class="fixed bottom-margin left-margin z-30 flex flex-col gap-space-xs bg-surface-container-lowest/90 backdrop-blur-md p-space-xs rounded-full shadow-[0_4px_16px_-2px_rgba(100,116,139,0.08)] pointer-events-auto"><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Acercar" type="button"><span class="material-symbols-outlined text-[20px]">add</span></button><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Alejar" type="button"><span class="material-symbols-outlined text-[20px]">remove</span></button><div class="w-5 h-px bg-outline-variant/30 mx-auto my-0.5"></div><button class="w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" title="Recentrar lienzo" type="button"><span class="material-symbols-outlined text-[20px]">filter_center_focus</span></button></div><main class="relative w-screen h-screen overflow-hidden"><div class="flex flex-col w-full h-screen overflow-hidden select-none font-body-md text-on-surface">
+<!-- OVERLAY CONTEXT TOP BAR (Contexto del encargo activo) -->
+<div class="absolute top-20 left-margin z-20 flex items-center gap-space-md pointer-events-auto">
+<div class="bg-surface-container-lowest/95 backdrop-blur-md px-space-lg py-space-sm rounded-xl shadow-lg shadow-secondary/5 flex items-center gap-space-md border border-outline-variant/30">
+<div class="w-10 h-10 rounded-lg bg-secondary-container flex items-center justify-center text-on-secondary-fixed">
+<span class="material-symbols-outlined text-[24px]">electric_bolt</span>
+</div>
+<div>
+<div class="flex items-center gap-space-xs">
+<span class="font-headline-sm text-headline-sm text-on-surface">Subestación 66kV Norte</span>
+<span class="bg-secondary-fixed text-on-secondary-fixed font-label-xs text-label-xs px-2 py-0.5 rounded-full flex items-center gap-1 font-bold">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+            Revisión pendiente del Director
+          </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1.5">
+<span>Coordinación de protecciones eléctricas</span>
+<span class="text-outline-variant">•</span>
+<span class="text-tertiary font-medium">Fase 4/5 activa</span>
+</p>
+</div>
+</div>
+</div>
+<!-- MAIN VIEWPORT CONTAINER: ISOMETRIC SIMULATOR + FLOATING CONSOLE -->
+<div class="relative w-full h-full flex overflow-hidden">
+<!-- ISOMETRIC SVG CANVAS (1180px available span when drawer open) -->
+<div class="relative flex-1 h-full overflow-hidden bg-gradient-to-b from-[#FAF8F5] via-[#F4ECE1] to-[#EAE0D0] cursor-grab active:cursor-grabbing">
+<!-- Ambient Sun Rays / Studio Lighting Layer -->
+<div class="absolute inset-0 pointer-events-none bg-gradient-to-tr from-amber-100/30 via-transparent to-teal-50/20 mix-blend-soft-light"></div>
+<!-- Dust & Mote Ambient Subtle Lighting SVG -->
+<svg class="absolute inset-0 w-full h-full opacity-40 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<radialgradient cx="20%" cy="15%" id="sunSpot" r="65%">
+<stop offset="0%" stop-color="#fffbeb" stop-opacity="0.8"></stop>
+<stop offset="100%" stop-color="#fffbeb" stop-opacity="0"></stop>
+</radialgradient>
+</defs>
+<rect fill="url(#sunSpot)" height="100%" width="100%"></rect>
+</svg>
+<!-- Isometric Studio Floor & Entities SVG Viewport -->
+<svg class="w-full h-full object-cover select-none" style="filter: drop-shadow(0 10px 25px rgba(100,116,139,0.06));" viewbox="0 0 1400 960">
+<defs>
+<!-- Parquet Isometric Pattern -->
+<pattern height="34.64" id="woodPlanks" patterntransform="scale(1.2)" patternunits="userSpaceOnUse" width="60">
+<path d="M 0,17.32 L 30,0 L 60,17.32 L 30,34.64 Z" fill="#EBDDC7" stroke="#DFCFB4" stroke-width="0.8"></path>
+<path d="M 15,8.66 L 45,25.98" stroke="#D7C4A5" stroke-opacity="0.5" stroke-width="0.5"></path>
+<path d="M 30,0 L 0,17.32" stroke="#D7C4A5" stroke-opacity="0.6" stroke-width="0.5"></path>
+</pattern>
+<!-- Rug Pattern -->
+<pattern height="23" id="tealRug" patternunits="userSpaceOnUse" width="40">
+<path d="M 0,11.5 L 20,0 L 40,11.5 L 20,23 Z" fill="#d1fae5" stroke="#a7f3d0" stroke-width="0.6"></path>
+</pattern>
+<!-- Soft Dropshadow Filter -->
+<filter height="150%" id="isoShadow" width="150%" x="-20%" y="-20%">
+<fedropshadow dx="3" dy="10" flood-color="#5a452a" flood-opacity="0.12" stddeviation="6"></fedropshadow>
+</filter>
+<filter height="160%" id="charShadow" width="160%" x="-30%" y="-30%">
+<fedropshadow dx="2" dy="6" flood-color="#40301a" flood-opacity="0.15" stddeviation="3"></fedropshadow>
+</filter>
+</defs>
+<!-- ================= FLOOR BASE ================= -->
+<!-- Big Studio Isometric Slab -->
+<polygon fill="url(#woodPlanks)" filter="url(#isoShadow)" points="700,60 1340,430 700,800 60,430"></polygon>
+<!-- Perimeter Warm Studio Skirting Board -->
+<polygon fill="#CBBBA1" points="60,430 700,800 700,816 60,446"></polygon>
+<polygon fill="#B9A88E" points="700,800 1340,430 1340,446 700,816"></polygon>
+<!-- STUDIO LOW PARTITIONS & ARCHITECTURAL WALLS (Warm bone white #F8FAFC) -->
+<!-- Rear Northwest Wall (with Large Sunlit Studio Windows) -->
+<polygon fill="#F8FAFC" opacity="0.95" points="60,430 700,60 700,16 60,386"></polygon>
+<polygon fill="#FFFFFF" points="60,386 700,16 700,24 60,394"></polygon>
+<!-- Window Panes NW -->
+<polygon fill="#E0F2FE" opacity="0.6" points="140,345 320,241 320,135 140,239" stroke="#CBD5E1" stroke-width="2"></polygon>
+<polygon fill="#E0F2FE" opacity="0.6" points="360,218 540,114 540,8 360,112" stroke="#CBD5E1" stroke-width="2"></polygon>
+<!-- Sunlight Cast Polygons on Floor -->
+<polygon fill="#FFFBEB" opacity="0.45" points="200,380 440,240 680,380 440,520"></polygon>
+<polygon fill="#FFFBEB" opacity="0.35" points="460,230 700,90 940,230 700,370"></polygon>
+<!-- Low Interior Partition A: Dividing Director from Workstations -->
+<polygon fill="#E2E8F0" opacity="0.9" points="380,245 490,308 490,270 380,207"></polygon>
+<polygon fill="#FFFFFF" points="380,207 490,270 496,267 386,204"></polygon>
+<!-- Low Interior Partition B: Dividing Central Studio from Archives -->
+<polygon fill="#E2E8F0" opacity="0.9" points="860,152 970,215 970,175 860,112"></polygon>
+<!-- Low Partition C: Dividing Stations from Meeting Area -->
+<polygon fill="#E2E8F0" opacity="0.85" points="480,555 580,612 580,578 480,521"></polygon>
+<!-- WOVEN ROUND RUGS IN KEY ZONES -->
+<!-- Rug below Orchestrator central round table -->
+<ellipse cx="690" cy="410" fill="#ecfdf5" opacity="0.8" rx="140" ry="78"></ellipse>
+<ellipse cx="690" cy="410" fill="none" rx="130" ry="72" stroke="#6ee7b7" stroke-dasharray="6,4" stroke-width="1.5"></ellipse>
+<!-- Rug below Director Desk -->
+<ellipse cx="320" cy="275" fill="url(#tealRug)" opacity="0.6" rx="110" ry="60"></ellipse>
+<!-- Rug below Meeting Table -->
+<ellipse cx="780" cy="625" fill="#fffbeb" opacity="0.9" rx="150" ry="80"></ellipse>
+<ellipse cx="780" cy="625" fill="none" rx="142" ry="74" stroke="#fde68a" stroke-width="1.5"></ellipse>
+<!-- ================= ZONE 1: PUESTO DEL DIRECTOR ================= -->
+<g class="cursor-pointer transition-transform hover:scale-[1.01]" id="director-zone">
+<!-- Shadow -->
+<ellipse cx="320" cy="285" fill="#000" opacity="0.08" rx="65" ry="32"></ellipse>
+<!-- Solid Oak Executive Desk -->
+<!-- Desk top -->
+<polygon fill="#C9A87C" points="260,265 370,202 410,225 300,288" stroke="#A9875C" stroke-width="1"></polygon>
+<!-- Desk sides -->
+<polygon fill="#9C794C" points="260,265 300,288 300,312 260,289"></polygon>
+<polygon fill="#B48F60" points="300,288 410,225 410,249 300,312"></polygon>
+<!-- Rolled Blueprints on Desk -->
+<ellipse cx="350" cy="235" fill="#E0F2FE" rx="14" ry="7" stroke="#38BDF8" stroke-width="1.2"></ellipse>
+<path d="M 336,235 L 366,218" stroke="#0284C7" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Brass Desk Lamp with warm glow -->
+<circle cx="280" cy="250" fill="#FEF3C7" opacity="0.8" r="14"></circle>
+<ellipse cx="280" cy="254" fill="#D97706" rx="6" ry="3"></ellipse>
+<path d="M 280,254 L 280,240 L 288,235" stroke="#B45309" stroke-linecap="round" stroke-width="2.2"></path>
+<ellipse cx="288" cy="235" fill="#F59E0B" rx="7" ry="4"></ellipse>
+<!-- Ergonomic Director Chair -->
+<ellipse cx="355" cy="205" fill="#334155" rx="16" ry="10"></ellipse>
+<path d="M 345,195 Q 355,180 365,195 L 365,205 L 345,205 Z" fill="#475569"></path>
+<!-- Ficus Lyrata Plant in Terracotta Pot -->
+<ellipse cx="205" cy="315" fill="#854D0E" opacity="0.3" rx="14" ry="8"></ellipse>
+<polygon fill="#C2410C" points="196,305 214,305 218,325 192,325"></polygon>
+<!-- Leaves -->
+<path d="M 205,305 Q 185,280 195,260 Q 210,275 205,305" fill="#15803D"></path>
+<path d="M 205,300 Q 230,280 220,255 Q 205,275 205,300" fill="#16A34A"></path>
+<path d="M 205,290 Q 200,260 205,245 Q 215,265 205,290" fill="#22C55E"></path>
+<!-- Label Tag: Puesto del Director -->
+<g transform="translate(255, 175)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="24" opacity="0.95" rx="12" width="130" x="0" y="0"></rect>
+<circle cx="12" cy="12" fill="#006b5f" r="4"></circle>
+<text fill="#0f172a" font-family="Manrope" font-size="11" font-weight="700" x="24" y="16">Puesto del Director</text>
+</g>
+</g>
+<!-- ================= ZONE 2: MESA DEL ORQUESTADOR (CENTRAL) ================= -->
+<g class="cursor-pointer transition-transform hover:scale-[1.01]" id="orchestrator-zone">
+<!-- Table Shadow -->
+<ellipse cx="690" cy="425" fill="#000" opacity="0.12" rx="80" ry="42"></ellipse>
+<!-- Round Oak Central Table -->
+<!-- Table Top Cylinder -->
+<ellipse cx="690" cy="410" fill="#DFCFB4" rx="72" ry="38" stroke="#C9B494" stroke-width="1.5"></ellipse>
+<path d="M 618,410 A 72 38 0 0 0 762 410 L 762 422 A 72 38 0 0 1 618 422 Z" fill="#BFAF93"></path>
+<!-- Central Table Pedestal Column -->
+<ellipse cx="690" cy="442" fill="#9C8D74" rx="26" ry="12"></ellipse>
+<!-- Floating Soft Holographic / Acrylic Trays on Table -->
+<polygon fill="#14B8A6" opacity="0.25" points="650,395 680,380 705,392 675,407" stroke="#14B8A6" stroke-width="1.2"></polygon>
+<polygon fill="#0EA5E9" opacity="0.2" points="700,410 735,393 755,404 720,422" stroke="#38BDF8" stroke-width="1"></polygon>
+<circle cx="690" cy="398" fill="#14B8A6" opacity="0.9" r="6"></circle>
+<circle class="animate-spin" cx="690" cy="398" fill="none" r="12" stroke="#14B8A6" stroke-dasharray="3,2" stroke-width="1"></circle>
+<!-- Character Chibi: Claude (El Orquestador) -->
+<g filter="url(#charShadow)" transform="translate(670, 315)">
+<!-- Shadow under chibi -->
+<ellipse cx="20" cy="62" fill="#000" opacity="0.2" rx="14" ry="6"></ellipse>
+<!-- Body / Cozy Engineering Cardigan -->
+<path d="M 10,40 Q 20,36 30,40 L 32,58 Q 20,62 8,58 Z" fill="#006b5f"></path>
+<!-- Cute Warm Scarf / Collar -->
+<rect fill="#eee1c9" height="8" rx="4" width="16" x="12" y="36"></rect>
+<!-- Head & Cute Chibi Face -->
+<ellipse cx="20" cy="25" fill="#FDE68A" rx="15" ry="14"></ellipse>
+<!-- Hair bangs -->
+<path d="M 6,24 Q 20,10 34,24 Q 28,14 20,15 Q 12,14 6,24 Z" fill="#78350F"></path>
+<!-- Glasses frame -->
+<circle cx="15" cy="24" fill="none" r="4" stroke="#00423b" stroke-width="1.5"></circle>
+<circle cx="25" cy="24" fill="none" r="4" stroke="#00423b" stroke-width="1.5"></circle>
+<line stroke="#00423b" stroke-width="1.5" x1="19" x2="21" y1="24" y2="24"></line>
+<!-- Cute blush dots -->
+<circle cx="11" cy="28" fill="#F43F5E" opacity="0.5" r="2"></circle>
+<circle cx="29" cy="28" fill="#F43F5E" opacity="0.5" r="2"></circle>
+<circle cx="16" cy="24" fill="#0F172A" r="1.2"></circle>
+<circle cx="24" cy="24" fill="#0F172A" r="1.2"></circle>
+<!-- Friendly Smile -->
+<path d="M 18,29 Q 20,31 22,29" fill="none" stroke="#92400E" stroke-width="1"></path>
+</g>
+<!-- Label Tag: Mesa del Orquestador + Claude Chip -->
+<g transform="translate(615, 275)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="26" opacity="0.96" rx="13" width="160" x="0" y="0"></rect>
+<circle cx="13" cy="13" fill="#14B8A6" r="5"></circle>
+<text fill="#0F172A" font-family="Manrope" font-size="11" font-weight="700" x="26" y="17">Mesa del Orquestador</text>
+<rect fill="#14B8A6" height="16" opacity="0.15" rx="8" width="36" x="116" y="5"></rect>
+<text fill="#006b5f" font-family="Manrope" font-size="9" font-weight="800" x="122" y="16">Claude</text>
+</g>
+<!-- Speech Balloon: Orquestador Activity -->
+<g transform="translate(695, 220)">
+<rect fill="#14B8A6" filter="url(#isoShadow)" height="28" rx="8" width="135" x="0" y="0"></rect>
+<polygon fill="#14B8A6" points="12,28 18,35 24,28"></polygon>
+<circle class="animate-ping" cx="14" cy="14" fill="#FFFFFF" r="3"></circle>
+<circle cx="14" cy="14" fill="#FFFFFF" r="3"></circle>
+<text fill="#FFFFFF" font-family="Manrope" font-size="11" font-weight="700" x="24" y="18">Coordinando entrega</text>
+</g>
+</g>
+<!-- ================= ZONE 3: OFICINA DE RR. HH. ================= -->
+<g class="cursor-pointer" id="hr-office">
+<!-- Room floor boundary / subtle mat -->
+<polygon fill="#F1F5F9" opacity="0.7" points="140,480 270,405 350,450 220,525"></polygon>
+<!-- Tall Wooden Filing Cabinet -->
+<polygon fill="#A16207" points="260,400 300,377 300,425 260,448"></polygon>
+<polygon fill="#CA8A04" points="300,377 335,397 335,445 300,425"></polygon>
+<polygon fill="#EAB308" points="260,400 295,380 335,397 300,417"></polygon>
+<!-- Drawers line markings -->
+<line stroke="#713F12" stroke-width="1.5" x1="305" x2="330" y1="412" y2="426"></line>
+<line stroke="#713F12" stroke-width="1.5" x1="305" x2="330" y1="422" y2="436"></line>
+<!-- HR Cork Pinboard Wall Attachment -->
+<polygon fill="#D97706" opacity="0.8" points="200,435 250,406 250,380 200,409"></polygon>
+<!-- Notes on cork -->
+<rect fill="#FEF08A" height="6" width="6" x="210" y="415"></rect>
+<rect fill="#BAE6FD" height="5" width="8" x="225" y="405"></rect>
+<rect fill="#FECDD3" height="7" width="5" x="238" y="398"></rect>
+<!-- Comfortable Armchair in HR -->
+<ellipse cx="190" cy="490" fill="#0284C7" rx="22" ry="14"></ellipse>
+<path d="M 175,475 Q 190,460 205,475 L 205,490 L 175,490 Z" fill="#38BDF8"></path>
+<!-- Label Tag: RR. HH. -->
+<g transform="translate(180, 520)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="22" opacity="0.95" rx="11" width="112" x="0" y="0"></rect>
+<circle cx="10" cy="11" fill="#64748B" r="3.5"></circle>
+<text fill="#334155" font-family="Manrope" font-size="10" font-weight="700" x="20" y="15">Oficina de RR. HH.</text>
+</g>
+</g>
+<!-- ================= ZONE 4: CUATRO ESTACIONES DE TRABAJO ================= -->
+<!-- ESTACIÓN 1: Ing. Protecciones [Qwen] (Caminando hacia la Mesa de Revisión) -->
+<g id="station-1">
+<!-- Station Desk 1 -->
+<polygon fill="#D6C4A5" points="410,410 470,375 510,398 450,433"></polygon>
+<polygon fill="#B8A381" points="450,433 510,398 510,415 450,450"></polygon>
+<!-- Screen with Single-line Diagram on desk -->
+<polygon fill="#0F172A" points="435,395 455,383 455,368 435,380"></polygon>
+<polygon fill="#14B8A6" opacity="0.9" points="436,393 453,383 453,371 436,381"></polygon>
+<!-- Empty Desk Chair -->
+<ellipse cx="465" cy="445" fill="#64748B" rx="10" ry="6"></ellipse>
+<!-- Character Chibi: Ing. Protecciones (CAMINANDO hacia Mesa de Revisión x: 620, y: 550) -->
+<g filter="url(#charShadow)" transform="translate(565, 480)">
+<!-- Walking shadow -->
+<ellipse cx="20" cy="62" fill="#000" opacity="0.18" rx="14" ry="5"></ellipse>
+<!-- Body with Technical Vest (high-vis turquoise detailing) -->
+<path d="M 12,38 L 28,38 L 30,56 L 10,56 Z" fill="#0284C7"></path>
+<rect fill="#38BDF8" height="12" rx="2" width="12" x="14" y="42"></rect>
+<!-- Folder in Hands (Technical Document in Amber Cover) -->
+<polygon fill="#F59E0B" points="26,45 38,40 40,50 28,55" stroke="#B45309" stroke-width="1"></polygon>
+<text fill="#FFFFFF" font-family="Manrope" font-size="6" font-weight="900" x="31" y="49">66k</text>
+<!-- Cute Chibi Head -->
+<ellipse cx="20" cy="24" fill="#FCD34D" rx="14" ry="13"></ellipse>
+<!-- Dark Hair with engineer cap -->
+<path d="M 7,20 Q 20,8 33,20 L 35,17 Q 20,5 5,17 Z" fill="#1E293B"></path>
+<circle cx="16" cy="24" fill="#0F172A" r="1.5"></circle>
+<circle cx="24" cy="24" fill="#0F172A" r="1.5"></circle>
+<path d="M 18,29 Q 20,31 22,29" fill="none" stroke="#92400E" stroke-width="1"></path>
+<!-- Motion Lines (walking stride) -->
+<line stroke="#CBD5E1" stroke-width="1.5" x1="6" x2="0" y1="58" y2="55"></line>
+<line stroke="#CBD5E1" stroke-width="1.5" x1="8" x2="2" y1="62" y2="60"></line>
+</g>
+<!-- Label Tag: Ing. Protecciones [Qwen] -->
+<g transform="translate(520, 440)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="22" opacity="0.95" rx="11" width="135" x="0" y="0"></rect>
+<text fill="#0F172A" font-family="Manrope" font-size="10" font-weight="700" x="12" y="15">Ing. Protecciones</text>
+<rect fill="#F1F5F9" height="15" rx="7.5" width="30" x="98" y="3"></rect>
+<text fill="#0284C7" font-family="Manrope" font-size="8" font-weight="800" x="103" y="14">Qwen</text>
+</g>
+<!-- Speech Balloon: En entrega -->
+<g transform="translate(565, 400)">
+<rect fill="#F59E0B" filter="url(#isoShadow)" height="24" rx="8" width="125" x="0" y="0"></rect>
+<polygon fill="#F59E0B" points="12,24 16,30 20,24"></polygon>
+<text fill="#FFFFFF" font-family="Manrope" font-size="10" font-weight="700" x="10" y="16">Llevando carpeta ✓</text>
+</g>
+</g>
+<!-- ESTACIÓN 2: Investigador normativo [DeepSeek] (Analizando IEC 60909) -->
+<g id="station-2">
+<!-- Station Desk 2 -->
+<polygon fill="#D6C4A5" points="500,355 560,320 600,343 540,378"></polygon>
+<polygon fill="#B8A381" points="540,378 600,343 600,360 540,395"></polygon>
+<!-- Active Dual Screens -->
+<polygon fill="#0F172A" points="525,340 545,328 545,313 525,325"></polygon>
+<polygon fill="#14B8A6" points="526,338 543,328 543,316 526,326"></polygon>
+<polygon fill="#0F172A" points="548,326 568,314 568,299 548,311"></polygon>
+<polygon fill="#38BDF8" points="549,324 566,314 566,302 549,312"></polygon>
+<!-- Character Chibi: Investigador normativo seated -->
+<g filter="url(#charShadow)" transform="translate(545, 310)">
+<ellipse cx="16" cy="50" fill="#000" opacity="0.15" rx="10" ry="5"></ellipse>
+<!-- Body -->
+<path d="M 8,32 L 24,32 L 25,48 L 7,48 Z" fill="#475569"></path>
+<!-- Chibi Head -->
+<ellipse cx="16" cy="20" fill="#FDE68A" rx="12" ry="11"></ellipse>
+<!-- Hair -->
+<path d="M 6,18 Q 16,8 26,18 Q 20,10 16,11 Z" fill="#451A03"></path>
+<!-- Big glasses studying norm -->
+<circle cx="12" cy="20" fill="none" r="3.5" stroke="#1E293B" stroke-width="1.2"></circle>
+<circle cx="20" cy="20" fill="none" r="3.5" stroke="#1E293B" stroke-width="1.2"></circle>
+<line stroke="#1E293B" stroke-width="1.2" x1="15.5" x2="16.5" y1="20" y2="20"></line>
+</g>
+<!-- Label Tag: Investigador normativo [DeepSeek] -->
+<g transform="translate(470, 275)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="22" opacity="0.95" rx="11" width="168" x="0" y="0"></rect>
+<circle cx="10" cy="11" fill="#14B8A6" r="3.5"></circle>
+<text fill="#0F172A" font-family="Manrope" font-size="10" font-weight="700" x="18" y="15">Investigador normativo</text>
+<rect fill="#EEF2FF" height="15" rx="7.5" width="44" x="118" y="3"></rect>
+<text fill="#4F46E5" font-family="Manrope" font-size="8" font-weight="800" x="122" y="14">DeepSeek</text>
+</g>
+<!-- Speech Balloon: Analizando IEC 60909 (Turquesa #14B8A6 vibrante con destello) -->
+<g transform="translate(500, 230)">
+<rect fill="#14B8A6" filter="url(#isoShadow)" height="26" rx="8" width="150" x="0" y="0"></rect>
+<polygon fill="#14B8A6" points="20,26 26,32 32,26"></polygon>
+<!-- Sparkle icon -->
+<path d="M 12,13 L 14,8 L 16,13 L 21,15 L 16,17 L 14,22 L 12,17 L 7,15 Z" fill="#FFFFFF"></path>
+<text fill="#FFFFFF" font-family="Manrope" font-size="11" font-weight="700" x="25" y="17">Analizando IEC 60909</text>
+</g>
+</g>
+<!-- ESTACIÓN 3: Delineante CAD [Qwen] (Esperando a Ariel (!)) -->
+<g id="station-3">
+<!-- Station Desk 3 -->
+<polygon fill="#D6C4A5" points="760,265 820,230 860,253 800,288"></polygon>
+<polygon fill="#B8A381" points="800,288 860,253 860,270 800,305"></polygon>
+<!-- Big Curved CAD Monitor -->
+<polygon fill="#0F172A" points="785,250 812,235 812,216 785,231"></polygon>
+<polygon fill="#38BDF8" opacity="0.6" points="786,248 810,235 810,219 786,232"></polygon>
+<!-- Character Chibi: Delineante CAD (scratching head) -->
+<g filter="url(#charShadow)" transform="translate(800, 220)">
+<ellipse cx="16" cy="50" fill="#000" opacity="0.15" rx="10" ry="5"></ellipse>
+<!-- Body -->
+<path d="M 8,32 L 24,32 L 25,48 L 7,48 Z" fill="#0D9488"></path>
+<!-- Arm raised questioning -->
+<line stroke="#0D9488" stroke-linecap="round" stroke-width="3" x1="24" x2="30" y1="35" y2="22"></line>
+<circle cx="30" cy="22" fill="#FDE68A" r="3"></circle>
+<!-- Chibi Head -->
+<ellipse cx="16" cy="20" fill="#FDE68A" rx="12" ry="11"></ellipse>
+<!-- Ponytail Hair -->
+<path d="M 6,18 Q 16,8 26,18 Z" fill="#B45309"></path>
+<circle cx="6" cy="16" fill="#B45309" r="4"></circle>
+<!-- Puzzled face -->
+<circle cx="12" cy="20" fill="#0F172A" r="1.5"></circle>
+<circle cx="20" cy="20" fill="#0F172A" r="1.5"></circle>
+<line stroke="#92400E" stroke-width="1.2" x1="14" x2="19" y1="26" y2="24"></line>
+</g>
+<!-- Label Tag: Delineante CAD [Qwen] -->
+<g transform="translate(740, 185)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="22" opacity="0.95" rx="11" width="138" x="0" y="0"></rect>
+<circle cx="10" cy="11" fill="#F59E0B" r="3.5"></circle>
+<text fill="#0F172A" font-family="Manrope" font-size="10" font-weight="700" x="18" y="15">Delineante CAD</text>
+<rect fill="#F1F5F9" height="15" rx="7.5" width="34" x="98" y="3"></rect>
+<text fill="#0284C7" font-family="Manrope" font-size="8" font-weight="800" x="103" y="14">Qwen</text>
+</g>
+<!-- Speech Balloon: Esperando a Ariel (!) en ámbar cálido -->
+<g transform="translate(760, 140)">
+<rect fill="#F59E0B" filter="url(#isoShadow)" height="26" rx="8" width="148" x="0" y="0"></rect>
+<polygon fill="#F59E0B" points="20,26 26,32 32,26"></polygon>
+<!-- Alert icon -->
+<circle cx="14" cy="13" fill="#FEF3C7" r="6"></circle>
+<text fill="#B45309" font-family="Manrope" font-size="10" font-weight="900" x="12" y="17">!</text>
+<text fill="#FFFFFF" font-family="Manrope" font-size="11" font-weight="700" x="26" y="17">Esperando a Ariel (!)</text>
+</g>
+</g>
+<!-- ESTACIÓN 4: Revisor de Memoria [Claude] (En reposo con taza de café) -->
+<g id="station-4">
+<!-- Station Desk 4 -->
+<polygon fill="#D6C4A5" points="850,320 910,285 950,308 890,343"></polygon>
+<polygon fill="#B8A381" points="890,343 950,308 950,325 890,360"></polygon>
+<!-- Screen turned OFF (matte gray) -->
+<polygon fill="#94A3B8" points="875,305 895,293 895,278 875,290"></polygon>
+<!-- Cute Coffee Mug on desk -->
+<ellipse cx="915" cy="308" fill="#FFFFFF" rx="4" ry="2.5"></ellipse>
+<path d="M 915,305 Q 914,300 916,295" fill="none" stroke="#CBD5E1" stroke-width="1"></path>
+<!-- Character Chibi: Revisor de Memoria relaxing -->
+<g filter="url(#charShadow)" transform="translate(895, 275)">
+<ellipse cx="16" cy="50" fill="#000" opacity="0.15" rx="10" ry="5"></ellipse>
+<!-- Body -->
+<path d="M 8,32 L 24,32 L 25,48 L 7,48 Z" fill="#94A3B8"></path>
+<!-- Holding coffee cup in hand -->
+<rect fill="#FFFFFF" height="7" rx="1.5" width="6" x="22" y="38"></rect>
+<!-- Chibi Head (Content peaceful face) -->
+<ellipse cx="16" cy="20" fill="#FDE68A" rx="12" ry="11"></ellipse>
+<!-- Hair -->
+<path d="M 6,18 Q 16,8 26,18 Z" fill="#1E293B"></path>
+<!-- Closed happy eyes ^ ^ -->
+<path d="M 10,21 Q 13,18 16,21" fill="none" stroke="#334155" stroke-width="1.3"></path>
+<path d="M 17,21 Q 20,18 23,21" fill="none" stroke="#334155" stroke-width="1.3"></path>
+<path d="M 14,26 Q 16.5,28 19,26" fill="none" stroke="#92400E" stroke-width="1"></path>
+</g>
+<!-- Label Tag: Revisor de Memoria [Claude] -->
+<g transform="translate(840, 240)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="22" opacity="0.95" rx="11" width="158" x="0" y="0"></rect>
+<circle cx="10" cy="11" fill="#94A3B8" r="3.5"></circle>
+<text fill="#475569" font-family="Manrope" font-size="10" font-weight="700" x="18" y="15">Revisor de Memoria</text>
+<rect fill="#CCFBF1" height="15" rx="7.5" width="38" x="114" y="3"></rect>
+<text fill="#006b5f" font-family="Manrope" font-size="8" font-weight="800" x="119" y="14">Claude</text>
+</g>
+<!-- Speech Balloon: En reposo (grisáceo suave / té / café) -->
+<g transform="translate(860, 200)">
+<rect fill="#F1F5F9" filter="url(#isoShadow)" height="24" rx="8" stroke="#E2E8F0" stroke-width="1" width="105" x="0" y="0"></rect>
+<polygon fill="#F1F5F9" points="16,24 20,29 24,24"></polygon>
+<!-- Coffee cup icon -->
+<path d="M 12,11 L 18,11 L 17,17 L 13,17 Z" fill="#64748B"></path>
+<text fill="#64748B" font-family="Manrope" font-size="10" font-weight="600" x="24" y="16">En reposo</text>
+</g>
+</g>
+<!-- AGENTE ADICIONAL BLOQUEADO (Zona de cálculo estructural) -->
+<g id="blocked-agent" transform="translate(360, 480)">
+<!-- Character Chibi Bloqueado -->
+<g filter="url(#charShadow)">
+<ellipse cx="16" cy="50" fill="#000" opacity="0.15" rx="10" ry="5"></ellipse>
+<path d="M 8,32 L 24,32 L 25,48 L 7,48 Z" fill="#EF4444" opacity="0.8"></path>
+<ellipse cx="16" cy="20" fill="#FDE68A" rx="12" ry="11"></ellipse>
+<path d="M 6,18 Q 16,8 26,18 Z" fill="#581C87"></path>
+<circle cx="12" cy="21" fill="#0F172A" r="1.5"></circle>
+<circle cx="20" cy="21" fill="#0F172A" r="1.5"></circle>
+<path d="M 13,27 Q 16,24 19,27" fill="none" stroke="#92400E" stroke-width="1.2"></path>
+</g>
+<!-- Speech Balloon: Bloqueado en Coral vibrante (#EF4444) -->
+<g transform="translate(-15, -25)">
+<rect fill="#EF4444" filter="url(#isoShadow)" height="24" rx="8" width="95" x="0" y="0"></rect>
+<polygon fill="#EF4444" points="14,24 18,29 22,24"></polygon>
+<circle cx="12" cy="12" fill="#FFFFFF" r="5"></circle>
+<line stroke="#DC2626" stroke-width="1.5" x1="10" x2="14" y1="10" y2="14"></line>
+<line stroke="#DC2626" stroke-width="1.5" x1="14" x2="10" y1="10" y2="14"></line>
+<text fill="#FFFFFF" font-family="Manrope" font-size="10" font-weight="700" x="22" y="16">Bloqueado</text>
+</g>
+</g>
+<!-- ================= ZONE 5: MURO DE ENCARGOS (CORK BOARD) ================= -->
+<g id="notice-board">
+<!-- Isometric Cork Board Wall Element -->
+<polygon fill="#D97706" filter="url(#isoShadow)" opacity="0.85" points="1020,380 1140,312 1140,240 1020,308"></polygon>
+<polygon fill="#F59E0B" points="1020,308 1140,240 1144,242 1024,310"></polygon>
+<!-- Sticky Notes & Drawings pinned -->
+<!-- Pinned Blueprint drawing -->
+<polygon fill="#E0F2FE" points="1035,320 1075,298 1075,270 1035,292" stroke="#38BDF8" stroke-width="0.8"></polygon>
+<!-- Yellow Sticky -->
+<polygon fill="#FEF08A" points="1085,290 1105,279 1105,264 1085,275"></polygon>
+<!-- Mint Sticky -->
+<polygon fill="#A7F3D0" points="1050,350 1072,338 1072,322 1050,334"></polygon>
+<!-- Amber Tag -->
+<polygon fill="#FED7AA" points="1090,325 1125,305 1125,292 1090,312"></polygon>
+<!-- Label Tag: Muro de encargos -->
+<g transform="translate(1015, 395)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="24" opacity="0.95" rx="12" width="130" x="0" y="0"></rect>
+<circle cx="12" cy="12" fill="#D97706" r="4"></circle>
+<text fill="#0F172A" font-family="Manrope" font-size="11" font-weight="700" x="24" y="16">Muro de encargos</text>
+</g>
+</g>
+<!-- ================= ZONE 6: MESA DE REVISIÓN (CON CARPETA EN ÁMBAR) ================= -->
+<g class="cursor-pointer transition-transform hover:scale-[1.01]" id="review-table-zone">
+<!-- Large Long Meeting Table -->
+<!-- Shadow -->
+<ellipse cx="780" cy="640" fill="#000" opacity="0.12" rx="100" ry="45"></ellipse>
+<!-- Table Wooden Top -->
+<polygon fill="#DFCFB4" points="680,610 840,520 900,555 740,645" stroke="#C9B494" stroke-width="1.5"></polygon>
+<polygon fill="#BFAF93" points="740,645 900,555 900,572 740,662"></polygon>
+<polygon fill="#A8987E" points="680,610 740,645 740,662 680,627"></polygon>
+<!-- Meeting Chairs around table -->
+<ellipse cx="690" cy="580" fill="#475569" rx="12" ry="8"></ellipse>
+<ellipse cx="735" cy="555" fill="#475569" rx="12" ry="8"></ellipse>
+<ellipse cx="850" cy="590" fill="#475569" rx="12" ry="8"></ellipse>
+<ellipse cx="800" cy="620" fill="#475569" rx="12" ry="8"></ellipse>
+<!-- GOLDEN / AMBER HIGHLIGHTED DOSSIER (CARPETA TÉCNICA) -->
+<!-- Warm Amber Radiance Halo -->
+<ellipse class="animate-pulse" cx="780" cy="585" fill="#F59E0B" opacity="0.35" rx="42" ry="24"></ellipse>
+<!-- Folder Isometric Shape -->
+<polygon fill="#F59E0B" filter="url(#isoShadow)" points="760,588 800,565 818,575 778,598" stroke="#B45309" stroke-width="1.5"></polygon>
+<polygon fill="#D97706" points="778,598 818,575 818,581 778,604"></polygon>
+<!-- White Technical Pages Inside Folder -->
+<polygon fill="#FFFFFF" points="763,586 798,566 805,570 770,590"></polygon>
+<line stroke="#006b5f" stroke-width="1.2" x1="772" x2="792" y1="583" y2="572"></line>
+<line stroke="#94A3B8" stroke-width="1" x1="774" x2="790" y1="587" y2="578"></line>
+<!-- Red Stamp Ribbon -->
+<circle cx="795" cy="578" fill="#EF4444" r="4.5"></circle>
+<!-- Floating High-Emphasis Callout: "Esperando firma del Director" -->
+<g filter="url(#isoShadow)" transform="translate(680, 505)">
+<rect fill="#F59E0B" height="32" rx="16" width="195" x="0" y="0"></rect>
+<circle class="animate-ping" cx="16" cy="16" fill="#FEF3C7" r="6"></circle>
+<circle cx="16" cy="16" fill="#FEF3C7" r="6"></circle>
+<path d="M 13,16 L 15,18 L 19,14" fill="none" stroke="#B45309" stroke-width="1.5"></path>
+<text fill="#FFFFFF" font-family="Manrope" font-size="11" font-weight="800" x="28" y="20">Esperando firma del Director</text>
+</g>
+<!-- Label Tag: Mesa de revisión -->
+<g transform="translate(720, 680)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="24" opacity="0.95" rx="12" width="135" x="0" y="0"></rect>
+<circle cx="12" cy="12" fill="#F59E0B" r="4"></circle>
+<text fill="#0F172A" font-family="Manrope" font-size="11" font-weight="700" x="24" y="16">Mesa de revisión</text>
+</g>
+</g>
+<!-- ================= ZONE 7: ARCHIVO / BIBLIOTECA TÉCNICA ================= -->
+<g id="library-zone">
+<!-- Room Mat -->
+<polygon fill="#F8FAFC" opacity="0.5" points="960,190 1080,122 1180,180 1060,248"></polygon>
+<!-- Tall Library Bookcase 1 -->
+<polygon fill="#78350F" filter="url(#isoShadow)" points="1030,150 1100,110 1100,195 1030,235"></polygon>
+<polygon fill="#92400E" points="1100,110 1125,124 1125,209 1100,195"></polygon>
+<polygon fill="#B45309" points="1030,150 1055,136 1125,124 1100,138"></polygon>
+<!-- Colorful Technical Binders on Shelves -->
+<!-- Shelf 1 -->
+<rect fill="#0284C7" height="15" width="5" x="1040" y="155"></rect>
+<rect fill="#DC2626" height="17" width="6" x="1046" y="152"></rect>
+<rect fill="#16A34A" height="19" width="5" x="1053" y="148"></rect>
+<rect fill="#F59E0B" height="20" width="7" x="1059" y="145"></rect>
+<rect fill="#0284C7" height="22" width="6" x="1067" y="141"></rect>
+<!-- Shelf 2 -->
+<rect fill="#F8FAFC" height="16" width="7" x="1040" y="185"></rect>
+<rect fill="#14B8A6" height="18" width="5" x="1048" y="181"></rect>
+<rect fill="#475569" height="19" width="6" x="1054" y="178"></rect>
+<!-- Cozy Reading Armchair in warm mustard -->
+<ellipse cx="1020" cy="225" fill="#CA8A04" rx="16" ry="10"></ellipse>
+<path d="M 1010,212 Q 1020,200 1030,212 L 1030,225 L 1010,225 Z" fill="#EAB308"></path>
+<!-- Side Reading Lamp -->
+<line stroke="#78350F" stroke-width="2" x1="995" x2="995" y1="230" y2="195"></line>
+<ellipse cx="995" cy="195" fill="#FEF08A" rx="8" ry="4"></ellipse>
+<!-- Plant Monstera in Ceramic Pot -->
+<ellipse cx="1135" cy="210" fill="#854D0E" opacity="0.3" rx="10" ry="5"></ellipse>
+<polygon fill="#E2E8F0" points="1128,202 1142,202 1145,218 1125,218"></polygon>
+<path d="M 1135,202 Q 1120,180 1128,165 Q 1140,175 1135,202" fill="#15803D"></path>
+<path d="M 1135,200 Q 1155,185 1148,162 Q 1136,178 1135,200" fill="#16A34A"></path>
+<!-- Label Tag: Archivo / Biblioteca -->
+<g transform="translate(1000, 260)">
+<rect fill="#FFFFFF" filter="url(#isoShadow)" height="24" opacity="0.95" rx="12" width="142" x="0" y="0"></rect>
+<circle cx="12" cy="12" fill="#006b5f" r="4"></circle>
+<text fill="#0F172A" font-family="Manrope" font-size="11" font-weight="700" x="24" y="16">Archivo / Biblioteca</text>
+</g>
+</g>
+<!-- SUBTLE COZY DETAILS: Indoor Monstera Plant in Main Hallway -->
+<g transform="translate(680, 710)">
+<ellipse cx="20" cy="30" fill="#000" opacity="0.12" rx="16" ry="8"></ellipse>
+<polygon fill="#FAF5FF" points="10,20 30,20 34,42 6,42" stroke="#E9D5FF" stroke-width="1"></polygon>
+<!-- Monstera big perforated leaves -->
+<path d="M 20,20 Q -5,-5 5,-25 Q 25,-10 20,20" fill="#166534"></path>
+<path d="M 20,18 Q 45,-8 35,-28 Q 15,-10 20,18" fill="#15803D"></path>
+<path d="M 20,15 Q 20,-15 22,-35 Q 28,-15 20,15" fill="#22C55E"></path>
+</g>
+</svg>
+<!-- FLOATING BOTTOM-LEFT VIEWPORT PILL CONTROLS (App shell provided primary, here is contextual reset) -->
+<div class="absolute bottom-6 left-24 z-20 flex items-center gap-space-xs bg-surface-container-lowest/90 backdrop-blur-md px-space-md py-space-xs rounded-full shadow-md">
+<span class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-wider font-bold">Modo: Vista Isométrica Diurna</span>
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+</div>
+</div>
+<!-- ========================================================================= -->
+<!-- RIGHT FLOATING DRAWER PANEL (420px ancho exacto, Ultra limpio translúcido) -->
+<!-- ========================================================================= -->
+<aside class="w-[420px] h-full flex flex-col bg-surface-container-lowest/95 backdrop-blur-xl shadow-2xl z-30 transition-transform duration-300 relative border-l border-outline-variant/30 overflow-hidden" id="orchestratorPanel">
+<!-- Panel Header -->
+<div class="p-space-lg bg-surface-container-low/60 flex items-center justify-between">
+<div class="flex items-center gap-space-md min-w-0">
+<div class="relative flex-shrink-0">
+<div class="w-11 h-11 rounded-xl bg-primary-container/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">hub</span>
+</div>
+<span class="absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full bg-primary-container flex items-center justify-center text-on-primary text-[8px] font-bold">✓</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-space-xs">
+<h2 class="font-headline-sm text-headline-sm text-on-surface truncate">Mesa del Orquestador</h2>
+<span class="bg-surface-container text-on-primary-container font-label-xs text-label-xs px-2 py-0.5 rounded-full font-bold">
+                Claude 3.5 Sonnet
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-primary flex items-center gap-1 font-semibold">
+<span class="w-2 h-2 rounded-full bg-primary animate-ping"></span>
+              Coordinando entrega con Director
+            </p>
+</div>
+</div>
+<button class="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors" onclick="document.getElementById('orchestratorPanel').classList.toggle('translate-x-full')" title="Minimizar panel" type="button">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<!-- Panel Scrollable Body -->
+<div class="flex-1 overflow-y-auto p-space-lg space-y-space-lg">
+<!-- SECCIÓN 1: PLAN DEL ENCARGO (5 pasos nítidos sin porcentajes matemáticos) -->
+<div class="bg-surface-container-low/40 rounded-xl p-space-md">
+<div class="flex items-center justify-between mb-space-md">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Plan del Encargo</span>
+<span class="font-label-xs text-label-xs bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold">Paso 4 de 5</span>
+</div>
+<div class="space-y-space-sm">
+<!-- Paso 1: Completado -->
+<div class="flex items-start gap-space-sm p-space-xs rounded-lg hover:bg-surface-container-lowest/80 transition-colors">
+<div class="w-6 h-6 rounded-full bg-tertiary-container/20 text-tertiary flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="min-w-0 flex-1">
+<p class="font-body-sm text-body-sm font-semibold text-on-surface line-through decoration-outline-variant/60">1. Recepción y unifilar cargado</p>
+<p class="font-label-xs text-label-xs text-tertiary">Completado por Qwen (Ing. Protecciones)</p>
+</div>
+</div>
+<!-- Paso 2: Completado -->
+<div class="flex items-start gap-space-sm p-space-xs rounded-lg hover:bg-surface-container-lowest/80 transition-colors">
+<div class="w-6 h-6 rounded-full bg-tertiary-container/20 text-tertiary flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="min-w-0 flex-1">
+<p class="font-body-sm text-body-sm font-semibold text-on-surface line-through decoration-outline-variant/60">2. Matrices de impedancia y cortocircuito</p>
+<p class="font-label-xs text-label-xs text-tertiary">Completado bajo norma IEC 60909</p>
+</div>
+</div>
+<!-- Paso 3: Completado -->
+<div class="flex items-start gap-space-sm p-space-xs rounded-lg hover:bg-surface-container-lowest/80 transition-colors">
+<div class="w-6 h-6 rounded-full bg-tertiary-container/20 text-tertiary flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[15px]">check</span>
+</div>
+<div class="min-w-0 flex-1">
+<p class="font-body-sm text-body-sm font-semibold text-on-surface line-through decoration-outline-variant/60">3. Curvas de disparo y relés 50/51</p>
+<p class="font-label-xs text-label-xs text-tertiary">Completado con margen de 310ms</p>
+</div>
+</div>
+<!-- Paso 4: PASO ACTUAL RESALTADO EN ÁMBAR CÁLIDO -->
+<div class="flex items-start gap-space-sm p-space-md rounded-xl bg-amber-500/10 shadow-sm">
+<div class="w-7 h-7 rounded-full bg-amber-500 text-on-primary flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+<span class="material-symbols-outlined text-[16px]">edit_document</span>
+</div>
+<div class="min-w-0 flex-1">
+<div class="flex items-center justify-between">
+<p class="font-body-md text-body-md font-bold text-amber-900">4. Revisión del Ingeniero Director</p>
+<span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+</div>
+<p class="font-body-sm text-body-sm text-amber-800/90 mt-0.5">Carpeta física lista en Mesa de Revisión esperando tu firma</p>
+<div class="mt-2 flex items-center gap-1.5 text-amber-900 font-label-xs text-label-xs font-bold">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+                  Acción requerida por Carlos M.
+                </div>
+</div>
+</div>
+<!-- Paso 5: Pendiente -->
+<div class="flex items-start gap-space-sm p-space-xs rounded-lg opacity-60">
+<div class="w-6 h-6 rounded-full bg-surface-container text-outline flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+</div>
+<div class="min-w-0 flex-1">
+<p class="font-body-sm text-body-sm font-medium text-on-surface-variant">5. Emisión de memoria técnica firmada</p>
+<p class="font-label-xs text-label-xs text-outline">En cola tras aprobación del Director</p>
+</div>
+</div>
+</div>
+</div>
+<!-- SECCIÓN 2: CONVERSACIÓN CON EL DIRECTOR (Hilo natural acogedor) -->
+<div class="space-y-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant">Despacho con Orquestador</span>
+<span class="font-label-xs text-label-xs text-outline-variant">Hoy, 11:42 AM</span>
+</div>
+<!-- Mensaje de Claude (Orquestador) -->
+<div class="flex items-start gap-space-sm">
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary flex-shrink-0 mt-1 shadow-sm">
+<span class="material-symbols-outlined text-[17px]">smart_toy</span>
+</div>
+<div class="space-y-space-xs max-w-[85%]">
+<div class="bg-surface-container-low rounded-2xl rounded-tl-sm p-space-md text-on-surface font-body-sm text-body-sm shadow-sm leading-relaxed">
+                Carlos, el <strong>Ing. Protecciones</strong> ha finalizado el ajuste del relé 51 con un margen de selectividad de <strong>310ms</strong>. Ha llevado la carpeta física a la <strong>Mesa de Revisión</strong> para tu visto bueno antes de sellar el entregable.
+              </div>
+<!-- Context Preview Card (PDF borrador) -->
+<div class="bg-surface-container-lowest p-space-sm rounded-xl flex items-center gap-space-sm shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+<div class="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">picture_as_pdf</span>
+</div>
+<div class="min-w-0 flex-1">
+<p class="font-label-md text-label-md text-on-surface font-bold truncate">Ajustes_Relé_SE_Norte.pdf</p>
+<p class="font-label-xs text-label-xs text-on-surface-variant">Borrador técnico • 14 páginas • Gráfica TCC</p>
+</div>
+<button class="w-7 h-7 rounded-full flex items-center justify-center text-primary hover:bg-surface-container" title="Previsualizar" type="button">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Mensaje del Director (Carlos M.) -->
+<div class="flex items-start justify-end gap-space-sm">
+<div class="bg-primary text-on-primary rounded-2xl rounded-tr-sm p-space-md text-body-sm font-body-sm max-w-[85%] shadow-sm leading-relaxed">
+              Verifico que la curva tiempo-inverso cumpla con la protección diferencial del transformador principal.
+            </div>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-fixed flex-shrink-0 mt-1 shadow-sm font-bold text-xs">
+              CM
+            </div>
+</div>
+<!-- Quick Context Response Input -->
+<div class="pt-space-xs">
+<div class="relative flex items-center">
+<input class="w-full bg-surface-container-low/80 text-on-surface text-body-sm font-body-sm px-space-md py-space-sm pr-10 rounded-full focus:outline-none focus:bg-surface-container-lowest placeholder:text-outline-variant shadow-inner transition-colors" placeholder="¿Deseas dar alguna instrucción o solicitar recálculo?" type="text"/>
+<button class="absolute right-1.5 w-7 h-7 rounded-full bg-primary-container text-on-primary flex items-center justify-center hover:bg-primary transition-colors" title="Enviar mensaje" type="button">
+<span class="material-symbols-outlined text-[16px]">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Studio Atmosphere Status Miniature -->
+<div class="p-space-md bg-secondary-container/30 rounded-xl flex items-center justify-between text-on-secondary-container">
+<div class="flex items-center gap-space-sm">
+<span class="material-symbols-outlined text-[20px] text-primary">psychiatry</span>
+<div>
+<p class="font-label-md text-label-md font-bold">Clima del Estudio: Armónico</p>
+<p class="font-label-xs text-label-xs text-secondary">3 agentes en tarea, 1 en reposo, 1 en espera</p>
+</div>
+</div>
+<span class="font-label-xs text-label-xs bg-surface-container-lowest px-2 py-1 rounded-full font-bold">Luz natural 100%</span>
+</div>
+</div>
+<!-- SECCIÓN 3: ACCIONES PRINCIPALES FIJADAS AL PIE -->
+<div class="p-space-lg bg-surface-container-lowest shadow-[0_-8px_20px_rgba(100,116,139,0.06)] flex flex-col gap-space-sm">
+<!-- Botón Primario: Aprobar y Emitir Memoria (Verde esmeralda / Turquesa vibrante) -->
+<button class="w-full bg-primary-container hover:bg-primary text-on-primary font-headline-sm text-headline-sm py-space-md px-space-lg rounded-xl flex items-center justify-center gap-space-sm shadow-[0_6px_18px_rgba(20,184,166,0.32)] transition-all transform active:scale-[0.99] cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[22px]">draw</span>
+<span>Aprobar y Emitir Memoria</span>
+</button>
+<!-- Botón Secundario: Devolver con comentarios -->
+<button class="w-full bg-surface-container hover:bg-surface-container-high text-on-surface font-body-sm text-body-sm py-space-sm px-space-md rounded-xl flex items-center justify-center gap-space-xs transition-colors cursor-pointer" type="button">
+<span class="material-symbols-outlined text-[18px] text-outline">history_edu</span>
+<span>Devolver con comentarios al Delineante</span>
+</button>
+</div>
+</aside>
+</div>
+</div>
+<!-- Vanilla JS for Micro-Interactions (Clicking zones focuses or toggles side drawer) -->
+<script>
+  // Simple interactive highlighting for studio zones
+  const interactiveZones = [
+    { id: 'review-table-zone', name: 'Mesa de Revisión' },
+    { id: 'orchestrator-zone', name: 'Mesa del Orquestador' },
+    { id: 'director-zone', name: 'Puesto del Director' }
+  ];
+
+  interactiveZones.forEach(zone => {
+    const el = document.getElementById(zone.id);
+    if (el) {
+      el.addEventListener('click', () => {
+        const panel = document.getElementById('orchestratorPanel');
+        if (panel && panel.classList.contains('translate-x-full')) {
+          panel.classList.remove('translate-x-full');
+        }
+      });
+    }
+  });
+</script></main></body></html>
