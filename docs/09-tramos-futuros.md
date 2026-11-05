@@ -24,6 +24,19 @@ Al abrir la oficina por primera vez (web o Android), el Orquestador conduce una 
 
 El wizard propone; no crea. El equipo solo se da de alta cuando el usuario lo aprueba, igual que cualquier recurso de la biblioteca.
 
+## Conocimiento progresivo del usuario como mecánica de juego
+
+En su etapa inicial, el objetivo explícito del Orquestador y de los agentes iniciales es conocer al usuario y ayudarlo. La oficina lleva una bitácora del trabajo para perfilar al usuario, entender cómo trabaja, anticipar lo que va a necesitar y mejorar los entregables presentes y futuros. El wizard inicial deja de ser un paso aislado y se convierte en el comienzo de un proceso continuo.
+
+La mecánica de juego se apoya en ese aprendizaje real. La oficina y sus agentes suben de nivel cuando el sistema registra conocimiento verificable del usuario (reglas, criterios, plantillas, preferencias de formato), no por puntos decorativos. En la escena puede verse como un expediente del usuario que se va completando y como experiencia acumulada de cada agente. Cumple la regla general de no mostrar métricas que el sistema no mida: cada nivel corresponde a entradas concretas de la bitácora.
+
+Principios de diseño:
+
+1. Aprender del trabajo, no del interrogatorio. El wizard inicial es corto (qué hace el usuario y qué entregables produce). El perfil crece con cada encargo: plantillas usadas, correcciones hechas y criterios aplicados. Cada corrección útil se registra como regla, en línea con lo descrito en "Curva de aprendizaje y métricas".
+2. Perfil visible y editable. Toda conclusión del sistema sobre el usuario ("prefiere X", "suele aplicar el criterio Y") se muestra en la oficina con su origen en la bitácora, y el usuario puede confirmarla, corregirla o borrarla. El sistema no actúa sobre suposiciones ocultas.
+3. Bitácora barata y perfil compacto. La bitácora es un registro de bajo costo. Cada cierto tiempo (por ejemplo, semanal), el Orquestador la resume en un perfil compacto, y los agentes por API leen solo ese perfil y lo relevante para el encargo actual, nunca la bitácora completa. Así el gasto en APIs no crece con el historial.
+4. Gestión de expectativas. Anticipar requiere historial, así que durante los primeros meses la oficina ayuda más a recordar que a prever. El Orquestador lo dice al usuario de forma explícita y repetida al inicio: en el wizard, en los primeros encargos y cuando el usuario corrija algo que la oficina todavía no sabía. Explica que está en fase de aprendizaje, que cada corrección la mejora y qué ha aprendido hasta ese momento, para que el usuario no se decepcione ni se canse.
+
 ## Recarga de saldo de las APIs desde la app
 
 Para que la experiencia sea fluida, la oficina web y la app móvil deberían permitir ver el saldo de cada proveedor y recargarlo sin salir a otra página. Punto a verificar antes de diseñarlo: si Qwen (DashScope) y DeepSeek ofrecen consulta de saldo y recarga por API o solo desde su consola web. Si la recarga no es posible por API, la app muestra el saldo cuando el proveedor lo permita y enlaza directamente a la página de recarga.
@@ -69,7 +82,7 @@ La calidad de los entregables mejora a medida que los agentes se ajustan y la bi
 1. Verificar que Claude Code en la nube cargue `oficina-mcp` y tenga salida de red hacia las APIs y la base de datos.
 2. Completar el tramo 1 con el encargo de calidad de energía.
 3. Aprobar y devolver encargos desde la oficina web en la tablet.
-4. Wizard inicial del Orquestador.
+4. Wizard inicial del Orquestador y conocimiento progresivo del usuario.
 5. VPS y Orquestador por API.
 6. App Android con captura sin conexión.
 7. Saldo y recarga de APIs desde la app.
@@ -80,4 +93,6 @@ La calidad de los entregables mejora a medida que los agentes se ajustan y la bi
 - Sincronización sin conexión: fotos pesadas, envíos interrumpidos y orden de captura. Se mitiga con compresión, reintentos, confirmación del servidor por captura y fecha y hora tomadas en el teléfono.
 - Límites del plan gratuito: al agotar el Blob de Vercel la carga se bloquea sin aviso para el usuario de la app. La app debe mostrar el estado del almacenamiento.
 - Costo del Orquestador por API: sin medición previa puede superar la estimación. Se mide durante el primer mes antes de dejarlo siempre activo.
+- Perfil del usuario: si el perfil se arma con inferencias que el usuario no ve, la oficina actúa sobre supuestos erróneos. Se mitiga con perfil visible y editable, con el origen de cada conclusión en la bitácora.
+- Decepción temprana: si la oficina promete anticipar antes de tener historial, el usuario la abandona. Se mitiga con el aviso explícito y repetido del Orquestador sobre la fase de aprendizaje.
 - Administración del VPS: actualizaciones de seguridad, respaldos de la base de datos y certificados HTTPS pasan a ser responsabilidad propia.
