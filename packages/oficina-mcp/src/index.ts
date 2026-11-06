@@ -15,7 +15,7 @@ const oficina = new Oficina(db);
 await oficina.sincronizarFichas();
 await oficina.reportarProveedores();
 
-const server = new McpServer({ name: "oficina-mcp", version: "0.1.0" });
+const server = new McpServer({ name: "oficina-mcp", version: "0.2.0" });
 
 function responder(fn: () => Promise<unknown>) {
   return async () => {
@@ -38,7 +38,11 @@ function herramienta<S extends z.ZodRawShape>(
   fn: (a: z.infer<z.ZodObject<S>>) => Promise<unknown>,
 ) {
   server.registerTool(nombre, { description: descripcion, inputSchema: esquema }, (async (a: z.infer<z.ZodObject<S>>) =>
-    responder(() => fn(a))()) as never);
+    responder(async () => {
+      // Cada llamada del Orquestador cuenta como contacto; un fallo del latido no bloquea la herramienta.
+      await oficina.latido().catch(() => undefined);
+      return fn(a);
+    })()) as never);
 }
 
 const tipoRecurso = z.enum(["ficha", "script", "aprendizaje"]);
@@ -91,6 +95,14 @@ herramienta(
     proveedor_original: z.string(),
     motivo: z.string(),
     modelo_nativo: z.string().describe("Modelo que reporta la sesión nativa."),
+    tokens_entrada: z.number().int().nonnegative().optional().describe("Tokens de entrada, si la sesión los separa."),
+    tokens_salida: z.number().int().nonnegative().optional().describe("Tokens de salida, si la sesión los separa."),
+    tokens_total: z
+      .number()
+      .int()
+      .nonnegative()
+      .optional()
+      .describe("Total de tokens que reportó la sesión para el subagente (p. ej. subagent_tokens en Claude Code). No lo estimes."),
   },
   (a) => oficina.registrarResultado(a),
 );
@@ -149,6 +161,45 @@ herramienta(
   "Indica qué proveedores por API tienen clave configurada y cómo se ejecutan sus fichas (api, sesion_nativa por respaldo sin clave, o no_configurado).",
   {},
   () => oficina.estadoProveedores(),
+);
+
+herramienta(
+  "proponer_recurso",
+  "Propone a Ariel guardar en la biblioteca una plantilla de entregable (con su archivo), un script, una ficha o un aprendizaje, sin cerrar el encargo. Crea la decisión de tipo recurso; guarda con guardar_recurso solo cuando esté aprobada.",
+  {
+    encargo_id: z.string(),
+    tipo: z.enum(["ficha", "script", "aprendizaje", "plantilla"]),
+    titulo: z.string().min(1),
+    resumen: z.string().min(1),
+    contenido: z.string().min(1).describe("Para una plantilla: cuándo usarla y cómo rellenarla."),
+    archivo_id: z.string().optional().describe("Obligatorio para plantillas: archivo del buzón o de un entregable."),
+  },
+  (a) => oficina.proponerRecurso(a),
+);
+
+herramienta(
+  "leer_buzon",
+  "Lee los mensajes de Ariel que llegaron desde la oficina web (con sus adjuntos) y los marca como leídos.",
+  { marcar_leidos: z.boolean().optional().describe("Por defecto sí.") },
+  (a) => oficina.leerBuzon(a),
+);
+
+herramienta(
+  "descargar_archivo",
+  "Descarga a disco un archivo que Ariel subió al buzón y devuelve la ruta local para trabajarlo.",
+  { archivo_id: z.string() },
+  (a) => oficina.descargarArchivo(a),
+);
+
+herramienta(
+  "responder_a_ariel",
+  "Deja un mensaje para Ariel en la oficina web, con entregables opcionales (rutas locales de archivos .docx, .pdf, .xlsx, etc. que se suben al almacén). No sustituye a pedir_decision: una emisión sigue necesitando su aprobación.",
+  {
+    texto: z.string().min(1),
+    encargo_id: z.string().optional(),
+    archivos: z.array(z.object({ ruta: z.string(), nombre: z.string().optional() })).optional(),
+  },
+  (a) => oficina.responderAAriel(a),
 );
 
 await server.connect(new StdioServerTransport());

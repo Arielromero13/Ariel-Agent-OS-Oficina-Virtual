@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
+import { almacenBlob, nombreSeguro, tipoDe, type Almacen } from "./archivos.js";
 import type { Db } from "./db.js";
 import { RAIZ_REPO } from "./db.js";
 import { PROVEEDORES, claveDe, ejecucionDe, llamarProveedor, respaldoNativoActivo, type Fetch, type Mensaje } from "./proveedores.js";
@@ -23,7 +24,14 @@ interface Encargo {
 export interface OpcionesOficina {
   fetch?: Fetch;
   env?: NodeJS.ProcessEnv;
+  /** Almacén de archivos; por defecto Vercel Blob si hay BLOB_READ_WRITE_TOKEN. */
+  almacen?: Almacen | null;
+  /** Carpeta local donde se descargan los archivos de Ariel. */
+  carpetaDescargas?: string;
 }
+
+/** Límite por archivo que entrega el Orquestador (el plan Hobby de Blob tiene 1 GB en total). */
+const MAX_BYTES = 50 * 1024 * 1024;
 
 export class Oficina {
   constructor(
@@ -134,8 +142,8 @@ export class Oficina {
        WHERE activa AND (nombre ILIKE $1 OR especialidad ILIKE $1 OR resumen ILIKE $1) ORDER BY id`,
       [patron],
     );
-    const recursos = await this.db.query<{ id: string; tipo: string; titulo: string; resumen: string; version: number }>(
-      `SELECT id, tipo, titulo, resumen, version FROM biblioteca
+    const recursos = await this.db.query<{ id: string; tipo: string; titulo: string; resumen: string; version: number; archivo_id: string | null }>(
+      `SELECT id, tipo, titulo, resumen, version, archivo_id FROM biblioteca
        WHERE estado = 'guardado' AND (titulo ILIKE $1 OR resumen ILIKE $1) ORDER BY creado DESC LIMIT 20`,
       [patron],
     );
@@ -277,15 +285,20 @@ export class Oficina {
     proveedor_original: string;
     motivo: string;
     modelo_nativo: string;
+    tokens_entrada?: number;
+    tokens_salida?: number;
+    tokens_total?: number;
   }) {
     const enc = await this.encargo(a.encargo_id);
     if (!enc.relevo_nativo) throw new ReglaOficina(`El relevo nativo está desactivado para el encargo ${enc.id}.`);
     await this.ficha(a.ficha_id);
     const id = nuevoId("res");
     await this.db.query(
-      `INSERT INTO resultados (id, encargo_id, version, ficha_id, origen, proveedor_original, motivo_relevo, modelo_nativo, contenido)
-       VALUES ($1, $2, $3, $4, 'relevo_nativo', $5, $6, $7, $8)`,
-      [id, enc.id, enc.version_actual, a.ficha_id, a.proveedor_original, a.motivo, a.modelo_nativo, a.contenido],
+      `INSERT INTO resultados (id, encargo_id, version, ficha_id, origen, proveedor_original, motivo_relevo, modelo_nativo, contenido,
+                               tokens_entrada, tokens_salida, tokens_total)
+       VALUES ($1, $2, $3, $4, 'relevo_nativo', $5, $6, $7, $8, $9, $10, $11)`,
+      [id, enc.id, enc.version_actual, a.ficha_id, a.proveedor_original, a.motivo, a.modelo_nativo, a.contenido,
+       a.tokens_entrada ?? null, a.tokens_salida ?? null, a.tokens_total ?? null],
     );
     await this.evento(enc.id, "resultado_entregado", a.ficha_id, {
       resultado_id: id,
@@ -393,5 +406,144 @@ export class Oficina {
 
   async estadoProveedores() {
     return this.reportarProveedores();
+  }
+
+  /**
+   * Propone un recurso para la biblioteca sin cerrar el encargo (por ejemplo, una plantilla de
+   * informe que Ariel subió) y deja la decisión de tipo recurso para Ariel. Solo se guarda con
+   * guardar_recurso cuando la decisión esté aprobada.
+   */
+  async proponerRecurso(a: {
+    encargo_id: string;
+    tipo: "ficha" | "script" | "aprendizaje" | "plantilla";
+    titulo: string;
+    resumen: string;
+    contenido: string;
+    archivo_id?: string;
+  }) {
+    const enc = await this.encargo(a.encargo_id);
+    if (a.tipo === "plantilla" && !a.archivo_id) throw new ReglaOficina("Una plantilla necesita su archivo (archivo_id del buzón o de un entregable).");
+    if (a.archivo_id) {
+      const f = await this.db.query("SELECT 1 FROM archivos WHERE id = $1", [a.archivo_id]);
+      if (!f.rows[0]) throw new ReglaOficina(`No existe el archivo ${a.archivo_id}`);
+    }
+    const id = nuevoId("rec");
+    await this.db.query(
+      `INSERT INTO biblioteca (id, tipo, titulo, resumen, contenido, origen_encargo, estado, archivo_id)
+       VALUES ($1, $2, $3, $4, $5, $6, 'candidato', $7)`,
+      [id, a.tipo, a.titulo, a.resumen, a.contenido, enc.id, a.archivo_id ?? null],
+    );
+    await this.evento(enc.id, "rrhh_candidatos", "rrhh", { candidatos: [{ recurso_id: id, tipo: a.tipo, titulo: a.titulo }] });
+    const { decision_id } = await this.pedirDecision({
+      encargo_id: enc.id,
+      tipo: "recurso",
+      pregunta: `¿Guardo en la biblioteca ${a.tipo === "plantilla" ? "la plantilla" : `el recurso (${a.tipo})`} «${a.titulo}»? ${a.resumen}`,
+    });
+    return { recurso_id: id, decision_id, accion: "Cuando Ariel apruebe, llama a guardar_recurso con este recurso_id y decision_id." };
+  }
+
+  // ---------- Buzón y archivos ----------
+
+  /** Registra que el Orquestador está en contacto. La web muestra el último contacto, no una sesión "en línea". */
+  async latido() {
+    await this.db.query(
+      `INSERT INTO presencia (id, latido) VALUES ('orquestador', now())
+       ON CONFLICT (id) DO UPDATE SET latido = now()`,
+    );
+  }
+
+  private get almacen(): Almacen | null {
+    return this.opciones.almacen !== undefined ? this.opciones.almacen : almacenBlob(this.env);
+  }
+
+  /** Mensajes de Ariel sin leer, con sus archivos adjuntos. Los marca como leídos. */
+  async leerBuzon(a: { marcar_leidos?: boolean } = {}) {
+    const mensajes = await this.db.query<{ id: string; encargo_id: string | null; texto: string; creado: string }>(
+      "SELECT id, encargo_id, texto, creado FROM mensajes WHERE autor = 'ariel' AND leido_en IS NULL ORDER BY creado",
+    );
+    const ids = mensajes.rows.map((m) => m.id);
+    const archivos = ids.length
+      ? await this.db.query<{ id: string; mensaje_id: string; nombre: string; tipo: string; tamano: string }>(
+          "SELECT id, mensaje_id, nombre, tipo, tamano FROM archivos WHERE mensaje_id = ANY($1) ORDER BY creado",
+          [ids],
+        )
+      : { rows: [] };
+    if (ids.length && a.marcar_leidos !== false) {
+      await this.db.query("UPDATE mensajes SET leido_en = now() WHERE id = ANY($1)", [ids]);
+      await this.evento(null, "buzon_leido", "orquestador", { mensajes: ids.length });
+    }
+    return {
+      mensajes: mensajes.rows.map((m) => ({
+        ...m,
+        archivos: archivos.rows
+          .filter((f) => f.mensaje_id === m.id)
+          .map((f) => ({ archivo_id: f.id, nombre: f.nombre, tipo: f.tipo, tamano: Number(f.tamano) })),
+      })),
+      accion: ids.length
+        ? "Responde con responder_a_ariel. Para leer un adjunto, descárgalo con descargar_archivo."
+        : "No hay mensajes nuevos de Ariel.",
+    };
+  }
+
+  /** Descarga a disco un archivo del buzón para trabajarlo en la sesión. */
+  async descargarArchivo(a: { archivo_id: string }) {
+    const { rows } = await this.db.query<{ id: string; nombre: string; url: string; tipo: string }>(
+      "SELECT id, nombre, url, tipo FROM archivos WHERE id = $1",
+      [a.archivo_id],
+    );
+    const f = rows[0];
+    if (!f) throw new ReglaOficina(`No existe el archivo ${a.archivo_id}`);
+    const almacen = this.almacen;
+    if (!almacen) throw new ReglaOficina("Falta BLOB_READ_WRITE_TOKEN en el entorno de oficina-mcp: no se puede leer el almacén de archivos.");
+    const carpeta = join(this.opciones.carpetaDescargas ?? join(RAIZ_REPO, ".oficina", "archivos"), f.id);
+    mkdirSync(carpeta, { recursive: true });
+    const ruta = join(carpeta, nombreSeguro(f.nombre));
+    const datos = await almacen.leer(f.url);
+    writeFileSync(ruta, datos);
+    return { archivo_id: f.id, nombre: f.nombre, tipo: f.tipo, ruta, bytes: datos.length };
+  }
+
+  /**
+   * Mensaje del Orquestador para Ariel, con entregables opcionales (rutas locales que se suben al
+   * almacén). Se valida todo antes de escribir, para no dejar un mensaje con adjuntos a medias.
+   */
+  async responderAAriel(a: { texto: string; encargo_id?: string; archivos?: { ruta: string; nombre?: string }[] }) {
+    if (a.encargo_id) await this.encargo(a.encargo_id);
+    const adjuntos = (a.archivos ?? []).map((f) => {
+      let tamano: number;
+      try {
+        tamano = statSync(f.ruta).size;
+      } catch {
+        throw new ReglaOficina(`No existe el archivo ${f.ruta} en la sesión.`);
+      }
+      if (tamano > MAX_BYTES) throw new ReglaOficina(`${f.ruta} pesa ${tamano} bytes; el límite por archivo es ${MAX_BYTES}.`);
+      const nombre = f.nombre?.trim() || basename(f.ruta);
+      return { ruta: f.ruta, nombre, tipo: tipoDe(nombre), tamano };
+    });
+    const almacen = this.almacen;
+    if (adjuntos.length && !almacen) {
+      throw new ReglaOficina("Falta BLOB_READ_WRITE_TOKEN en el entorno de oficina-mcp: no se pueden entregar archivos. Envía el mensaje sin adjuntos y avisa a Ariel.");
+    }
+    const subidos = [];
+    for (const f of adjuntos) {
+      const id = nuevoId("arc");
+      const { url } = await almacen!.subir(`entregables/${id}/${nombreSeguro(f.nombre)}`, readFileSync(f.ruta), f.tipo);
+      subidos.push({ ...f, id, url });
+    }
+    const mensajeId = nuevoId("msg");
+    await this.db.query("INSERT INTO mensajes (id, encargo_id, autor, texto, leido_en) VALUES ($1, $2, 'orquestador', $3, now())", [
+      mensajeId,
+      a.encargo_id ?? null,
+      a.texto,
+    ]);
+    for (const f of subidos) {
+      await this.db.query(
+        `INSERT INTO archivos (id, encargo_id, mensaje_id, origen, nombre, tipo, tamano, url)
+         VALUES ($1, $2, $3, 'orquestador', $4, $5, $6, $7)`,
+        [f.id, a.encargo_id ?? null, mensajeId, f.nombre, f.tipo, f.tamano, f.url],
+      );
+    }
+    await this.evento(a.encargo_id ?? null, "orquestador_respondio", "orquestador", { mensaje_id: mensajeId, archivos: subidos.length });
+    return { mensaje_id: mensajeId, archivos: subidos.map((f) => ({ archivo_id: f.id, nombre: f.nombre, tipo: f.tipo, tamano: f.tamano })) };
   }
 }

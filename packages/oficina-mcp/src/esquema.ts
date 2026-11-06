@@ -154,6 +154,55 @@ CREATE INDEX IF NOT EXISTS decisiones_pendientes ON decisiones (estado) WHERE es
 ALTER TABLE proveedores ADD COLUMN IF NOT EXISTS respaldo_nativo BOOLEAN NOT NULL DEFAULT FALSE;
 `,
   },
+  {
+    nombre: "003_buzon_archivos_consumo",
+    sql: `
+-- Buzón: Ariel escribe desde la oficina web; el Orquestador lee y responde con oficina-mcp
+-- cuando tiene una sesión abierta. No es un chat en tiempo real.
+CREATE TABLE IF NOT EXISTS mensajes (
+  id          TEXT PRIMARY KEY,
+  encargo_id  TEXT REFERENCES encargos(id),
+  autor       TEXT NOT NULL CHECK (autor IN ('ariel', 'orquestador')),
+  texto       TEXT NOT NULL,
+  leido_en    TIMESTAMPTZ,
+  creado      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS mensajes_sin_leer ON mensajes (creado) WHERE leido_en IS NULL;
+
+-- Archivos subidos por Ariel y entregables del Orquestador (almacenados en Vercel Blob).
+CREATE TABLE IF NOT EXISTS archivos (
+  id          TEXT PRIMARY KEY,
+  encargo_id  TEXT REFERENCES encargos(id),
+  mensaje_id  TEXT REFERENCES mensajes(id),
+  origen      TEXT NOT NULL CHECK (origen IN ('ariel', 'orquestador')),
+  nombre      TEXT NOT NULL,
+  tipo        TEXT NOT NULL,
+  tamano      BIGINT NOT NULL,
+  url         TEXT NOT NULL,
+  creado      TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Último contacto del Orquestador con oficina-mcp: la web muestra si hay una sesión abierta.
+CREATE TABLE IF NOT EXISTS presencia (
+  id      TEXT PRIMARY KEY,
+  latido  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Tokens del trabajo hecho en la sesión nativa (subagentes). La sesión puede reportar solo el total.
+ALTER TABLE resultados ADD COLUMN IF NOT EXISTS tokens_entrada INTEGER;
+ALTER TABLE resultados ADD COLUMN IF NOT EXISTS tokens_salida INTEGER;
+ALTER TABLE resultados ADD COLUMN IF NOT EXISTS tokens_total INTEGER;
+`,
+  },
+  {
+    nombre: "004_plantillas",
+    sql: `
+-- Plantillas de entregable (Word, Excel...) en la biblioteca, con su archivo en el almacén.
+ALTER TABLE biblioteca DROP CONSTRAINT IF EXISTS biblioteca_tipo_check;
+ALTER TABLE biblioteca ADD CONSTRAINT biblioteca_tipo_check CHECK (tipo IN ('ficha', 'script', 'aprendizaje', 'plantilla'));
+ALTER TABLE biblioteca ADD COLUMN IF NOT EXISTS archivo_id TEXT REFERENCES archivos(id);
+`,
+  },
 ];
 
 /**

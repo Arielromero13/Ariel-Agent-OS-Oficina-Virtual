@@ -7,7 +7,7 @@ Antes de implementar o cambiar arquitectura, lee `README.md` y los documentos en
 ## Jerarquía de decisiones
 
 1. La instrucción actual de Ariel.
-2. `docs/00-product-philosophy.md`, `docs/04-mvp-scope.md` y `docs/08-tramo-1.md` (tramo en curso). Las ideas de `docs/09-tramos-futuros.md` no se implementan mientras no se conviertan en tramo numerado.
+2. `docs/00-product-philosophy.md`, `docs/04-mvp-scope.md`, `docs/08-tramo-1.md` y `docs/11-tramo-2.md` (tramos en curso). Las ideas de `docs/09-tramos-futuros.md` no se implementan mientras no se conviertan en tramo numerado.
 3. `docs/07-arquitectura.md`, el diseño de referencia en `docs/design/` y los documentos de experiencia, memoria, modelos y operación.
 4. El repositorio anterior `Ariel_OS_v1.0`, como referencia de código, roles, ejemplos y flujos existentes.
 
@@ -82,13 +82,27 @@ Un agente no revisa su propio trabajo; lo revisas tú.
 
 ### Respaldo nativo por falta de clave
 
-Si `despachar` devuelve `resolver_en_sesion`, el proveedor de esa ficha no tiene clave y la subtarea la resuelve un subagente de tu sesión (en Claude Code, la herramienta de subagentes). Dale al subagente exactamente `subagente.instrucciones_de_sistema` como rol y `subagente.tarea` como encargo, sin añadir contexto propio ni archivos extra. Registra su respuesta tal cual con `registrar_resultado`: `proveedor_original` y `motivo: sin_clave` como los devuelve `despachar`, y `modelo_nativo` el que reporte tu sesión. Después la revisas como cualquier otro resultado; queda además marcada para revisión de Ariel. Si no puedes lanzar subagentes en tu sesión, dilo y pregunta a Ariel; no escribas tú el resultado como si fuera del subagente.
+Si `despachar` devuelve `resolver_en_sesion`, el proveedor de esa ficha no tiene clave y la subtarea la resuelve un subagente de tu sesión (en Claude Code, la herramienta de subagentes). Dale al subagente exactamente `subagente.instrucciones_de_sistema` como rol y `subagente.tarea` como encargo, sin añadir contexto propio ni archivos extra. Registra su respuesta tal cual con `registrar_resultado`: `proveedor_original` y `motivo: sin_clave` como los devuelve `despachar`, `modelo_nativo` el que reporte tu sesión y los tokens que reporte (ver "Tokens y gasto"). Después la revisas como cualquier otro resultado; queda además marcada para revisión de Ariel. Si no puedes lanzar subagentes en tu sesión, dilo y pregunta a Ariel; no escribas tú el resultado como si fuera del subagente.
 
 ### Fallos y relevo nativo
 
 `despachar` devuelve un estado de fallo (`sin_cuota`, `no_configurado`, `error`, `timeout`) y nunca cambia de proveedor. Tú tampoco: no reintentes con otro proveedor por tu cuenta.
 
 Si el encargo permite relevo nativo, resuelve la subtarea con un subagente propio de tu sesión y regístrala con `registrar_resultado`, con el proveedor original, el motivo y el modelo que reporta tu sesión. Esa parte queda marcada para revisión de Ariel, porque tú la produjiste y no puedes revisarla. Si el relevo está desactivado, informa a Ariel y espera su indicación.
+
+### Buzón: conversación con Ariel desde la oficina web
+
+Ariel puede escribirte y subir archivos desde la oficina web aunque no esté en esta sesión. Los mensajes esperan en el buzón hasta que los leas; no es un chat en tiempo real.
+
+- Al empezar una sesión, y cuando Ariel diga «revisa el buzón», llama a `leer_buzon`. Si un mensaje trae adjuntos, bájalos con `descargar_archivo` y trabaja sobre la ruta local que devuelve.
+- Contesta siempre con `responder_a_ariel`, aunque también le respondas aquí: la web es donde él te lee desde la tablet. Un pedido nuevo se trata como cualquier encargo (entender, sensibilidad, abrir, plan…); `responder_a_ariel` no sustituye a `pedir_decision`.
+- Entregables: deduce el formato de lo que pide y de su costumbre (informe → Word; versión final para enviar → PDF; datos o cálculos → Excel); si lo pide expresamente, usa ese. Genera el archivo en tu sesión con tus herramientas y entrégalo como adjunto de `responder_a_ariel` (`archivos: [{ ruta }]`). Un entregable final para terceros sigue necesitando la decisión de `emision` aprobada.
+- Plantillas: si Ariel sube un formato que quiere repetir (o corriges un entregable hasta dejarlo como le gusta), propón guardarlo con `proponer_recurso` de tipo `plantilla`, con su `archivo_id` y cuándo usarla. Solo se guarda con `guardar_recurso` tras su aprobación. Antes de generar un entregable, busca con `buscar_perfiles` si hay una plantilla guardada del mismo tipo; si la hay, descárgala con `descargar_archivo` y úsala como base.
+- Si falta `BLOB_READ_WRITE_TOKEN`, `responder_a_ariel` rechaza los adjuntos: envía el mensaje sin ellos y dile qué falta configurar.
+
+### Tokens y gasto
+
+Cada llamada por API registra sus tokens. Para el trabajo de la sesión nativa, pasa a `registrar_resultado` los tokens que reporte tu sesión para ese subagente: `tokens_entrada` y `tokens_salida` si los separa; si solo da un total (en Claude Code, `subagent_tokens`), `tokens_total`. Nunca los estimes. La oficina calcula el costo con la tabla de `packages/oficina-mcp/src/precios.ts`.
 
 ### Decisiones de Ariel
 

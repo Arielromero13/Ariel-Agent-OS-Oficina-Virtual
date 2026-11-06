@@ -12,6 +12,7 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
     "@neondatabase/serverless": "^1.2.0",
+    "@vercel/blob": "^2.8.2",
     "pg": "^8.23.1",
     "zod": "^4.6.7"
   },
@@ -25,6 +26,7 @@
   "exports": {
     "./decisiones": "./src/decisiones.ts",
     "./esquema": "./src/esquema.ts",
-    "./conexion": "./src/conexion.ts"
+    "./conexion": "./src/conexion.ts",
+    "./precios": "./src/precios.ts"
   }
 }
