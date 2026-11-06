@@ -149,6 +149,21 @@ CREATE INDEX IF NOT EXISTS decisiones_pendientes ON decisiones (estado) WHERE es
   },
 ];
 
+/**
+ * Divide un script SQL en sentencias sueltas, para conexiones que solo aceptan una
+ * sentencia por llamada (Neon por HTTP). Quita los comentarios de línea antes de dividir,
+ * porque algunos contienen ";". Las migraciones no usan bloques $$ ni ";" dentro de textos.
+ */
+export function sentencias(sql: string): string[] {
+  return sql
+    .split("\n")
+    .map((linea) => linea.replace(/--.*$/, ""))
+    .join("\n")
+    .split(";")
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+}
+
 export async function aplicarMigraciones(db: Consultable): Promise<string[]> {
   for (const m of MIGRACIONES) await (db.exec ? db.exec(m.sql) : db.query(m.sql));
   return MIGRACIONES.map((m) => m.nombre);

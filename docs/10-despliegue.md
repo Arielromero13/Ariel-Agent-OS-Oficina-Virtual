@@ -8,6 +8,8 @@
 | Oficina web (`packages/oficina-web`) | Vercel, proyecto con directorio raíz `packages/oficina-web` | `DATABASE_URL`, `OFICINA_USUARIO`, `OFICINA_CLAVE`, `OFICINA_SECRETO` (opcional) |
 | `oficina-mcp` | Donde corre el Orquestador (Claude Code o Codex) | `DATABASE_URL`, `QWEN_API_KEY`, `DEEPSEEK_API_KEY` |
 
+Si la cadena apunta a Neon (`*.neon.tech`), `oficina-mcp` usa el driver serverless de Neon por HTTPS en lugar de `pg` por TCP: en las sesiones de Claude Code en la nube solo sale tráfico HTTPS por el proxy, y el puerto 5432 no llega. `.mcp.json` activa `NODE_USE_ENV_PROXY=1` para que Node use ese proxy (sin proxy no tiene efecto). `OFICINA_DRIVER=pg` o `OFICINA_DRIVER=neon` fuerzan uno u otro. La oficina web en Vercel sigue con `pg`.
+
 Las claves de Qwen y DeepSeek nunca se configuran en Vercel. La oficina web solo lee el estado y registra las decisiones de Ariel.
 
 ## Pasos
