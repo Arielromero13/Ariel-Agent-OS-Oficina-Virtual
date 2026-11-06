@@ -13,3 +13,4 @@ Thumbs.db
 .next/
 next-env.d.ts
 *.tsbuildinfo
+.oficina/

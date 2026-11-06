@@ -1,7 +1,7 @@
 "use client";
 
 import type { KeyboardEvent, ReactNode } from "react";
-import type { EstadoVisible, EstadosEscena, FichaVista } from "@/lib/escena";
+import type { EstadoOrquestador, EstadoVisible, EstadosEscena, FichaVista } from "@/lib/escena";
 
 /** Selección en la escena: zona o personaje. */
 export type Seleccion =
@@ -77,9 +77,13 @@ const COLOR_GLOBO: Record<EstadoVisible, { fondo: string; texto: string }> = {
   Bloqueado: { fondo: "#ef4444", texto: "#ffffff" },
   Error: { fondo: "#ef4444", texto: "#ffffff" },
   "No configurado": { fondo: "#e2e8f0", texto: "#64748b" },
+  "Mensaje sin leer": { fondo: "#6366f1", texto: "#ffffff" },
+  "Leyó tus mensajes": { fondo: "#14b8a6", texto: "#ffffff" },
+  "Te respondió": { fondo: "#0f766e", texto: "#ffffff" },
+  "Sin sesión abierta": { fondo: "#e2e8f0", texto: "#64748b" },
 };
 
-const ACTIVO = new Set<EstadoVisible>(["Analizando", "Coordinando", "Reuniendo equipo"]);
+const ACTIVO = new Set<EstadoVisible>(["Analizando", "Coordinando", "Reuniendo equipo", "Leyó tus mensajes", "Te respondió"]);
 
 function Globo({ x, y, estado }: { x: number; y: number; estado: EstadoVisible }) {
   const c = COLOR_GLOBO[estado];
@@ -107,9 +111,59 @@ function Etiqueta({ x, y, texto }: { x: number; y: number; texto: string }) {
   );
 }
 
+/** Globo de diálogo con el inicio de la última respuesta del Orquestador. */
+function Dialogo({ x, y, texto }: { x: number; y: number; texto: string }) {
+  const lineas = partir(texto, 30).slice(0, 3);
+  const w = Math.max(...lineas.map((l) => l.length)) * 6.3 + 24;
+  const h = lineas.length * 14 + 12;
+  return (
+    <g transform={`translate(${x},${y})`} className="dialogo" key={texto}>
+      <rect x={-w / 2} y={-h - 8} width={w} height={h} rx={10} fill="#ffffff" stroke="#0f766e" strokeWidth={1.5} />
+      <polygon points="-6,-9 6,-9 0,-1" fill="#ffffff" stroke="#0f766e" strokeWidth={1.5} />
+      <rect x={-7} y={-11} width={14} height={4} fill="#ffffff" />
+      {lineas.map((l, i) => (
+        <text key={i} x={0} y={-h + 6 + i * 14} textAnchor="middle" className="texto-dialogo">
+          {l}
+        </text>
+      ))}
+    </g>
+  );
+}
+
+function partir(t: string, ancho: number): string[] {
+  const lineas: string[] = [];
+  let actual = "";
+  for (const palabra of t.split(" ")) {
+    if ((actual + " " + palabra).trim().length > ancho && actual) {
+      lineas.push(actual);
+      actual = palabra;
+    } else actual = (actual + " " + palabra).trim();
+  }
+  if (actual) lineas.push(actual);
+  return lineas;
+}
+
+/** Sobre: mensajes de Ariel sin leer en la mesa del Orquestador. */
+function Sobre({ x, y, n }: { x: number; y: number; n: number }) {
+  return (
+    <g transform={`translate(${x},${y})`} className="sobre">
+      <rect x={-11} y={-8} width={22} height={15} rx={2} fill="#eef2ff" stroke="#6366f1" strokeWidth={1.5} />
+      <polyline points="-11,-8 0,1 11,-8" fill="none" stroke="#6366f1" strokeWidth={1.5} />
+      {n > 1 && (
+        <g transform="translate(12,-10)">
+          <circle r={7} fill="#6366f1" />
+          <text y={3} textAnchor="middle" className="contador-sobre">
+            {n > 9 ? "9+" : n}
+          </text>
+        </g>
+      )}
+    </g>
+  );
+}
+
 function Personaje({ gx, gy, ropa, pelo, estado }: { gx: number; gy: number; ropa: string; pelo: string; estado: EstadoVisible }) {
   const p = iso(gx, gy);
-  const tenue = estado === "No configurado";
+  const tenue = estado === "No configurado" || estado === "Sin sesión abierta";
   return (
     <g transform={`translate(${p.x},${p.y})`} opacity={tenue ? 0.45 : 1}>
       <ellipse cx={0} cy={0} rx={11} ry={5} fill="rgba(15,23,42,0.12)" />
@@ -175,12 +229,18 @@ const PELO = ["#3f2d20", "#111827", "#7c2d12", "#1f2937", "#57534e", "#292524"];
 export default function Escena({
   fichas,
   estados,
+  orquestador,
+  sinLeer,
+  entregables,
   encargosEnMuro,
   seleccion,
   alSeleccionar,
 }: {
   fichas: FichaVista[];
   estados: EstadosEscena;
+  orquestador: EstadoOrquestador;
+  sinLeer: number;
+  entregables: number;
   encargosEnMuro: number;
   seleccion: Seleccion | null;
   alSeleccionar: (s: Seleccion) => void;
@@ -279,9 +339,27 @@ export default function Escena({
         <ellipse cx={orq.x} cy={orq.y} rx={96} ry={48} fill="rgba(20,184,166,0.08)" stroke="#14b8a6" strokeDasharray="6 6" />
         <ellipse cx={orq.x} cy={orq.y + 8} rx={52} ry={26} fill="#bfae8e" />
         <ellipse cx={orq.x} cy={orq.y} rx={52} ry={26} fill="#e9dcc3" />
-        <ellipse cx={orq.x} cy={orq.y} rx={18} ry={9} fill="#99f6e4" className={estados.orquestador === "Coordinando" ? "nucleo activo" : "nucleo"} />
-        <Personaje gx={6.3} gy={5.2} ropa="#0f766e" pelo="#334155" estado={estados.orquestador} />
+        <ellipse cx={orq.x} cy={orq.y} rx={18} ry={9} fill="#99f6e4" className={ACTIVO.has(orquestador.estado) ? "nucleo activo" : "nucleo"} />
+        {/* Entregables del encargo: un documento por archivo, hasta tres. */}
+        {Array.from({ length: Math.min(entregables, 3) }).map((_, i) => (
+          <Caja key={`doc${i}`} gx={7.2 + i * 0.12} gy={6.1 - i * 0.12} w={0.5} d={0.65} h={2} z={24 + i * 2} arriba="#ffffff" izq="#cbd5e1" der="#94a3b8" />
+        ))}
+        {sinLeer > 0 && <Sobre x={orq.x - 30} y={orq.y - 6} n={sinLeer} />}
+        <Personaje gx={6.3} gy={5.2} ropa="#0f766e" pelo="#334155" estado={orquestador.estado} />
+        {orquestador.dice && <Dialogo x={iso(6.3, 5.2).x} y={iso(6.3, 5.2).y - 74} texto={orquestador.dice} />}
       </Interactivo>
+
+      {/* Carta de Ariel en camino: solo justo después de enviar un mensaje. */}
+      {orquestador.cartaEnVuelo && (
+        <g key={orquestador.cartaEnVuelo} className="carta" aria-hidden>
+          <Sobre x={0} y={0} n={0} />
+          <animateMotion
+            dur="1.6s"
+            fill="freeze"
+            path={`M${iso(2.5, 3.1).x},${iso(2.5, 3.1).y - 40} Q${(iso(2.5, 3.1).x + orq.x) / 2},${Math.min(iso(2.5, 3.1).y, orq.y) - 120} ${orq.x - 30},${orq.y - 6}`}
+          />
+        </g>
+      )}
 
       {/* Mesa de revisión */}
       <Interactivo nombre="Mesa de revisión" seleccionado={es({ tipo: "revision" })} alSeleccionar={() => alSeleccionar({ tipo: "revision" })} etiqueta={{ x: revision.x, y: revision.y + 40 }}>

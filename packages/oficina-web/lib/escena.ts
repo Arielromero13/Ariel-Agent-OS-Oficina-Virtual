@@ -14,7 +14,11 @@ export type EstadoVisible =
   | "Relevo nativo"
   | "Bloqueado"
   | "Error"
-  | "No configurado";
+  | "No configurado"
+  | "Mensaje sin leer"
+  | "Leyó tus mensajes"
+  | "Te respondió"
+  | "Sin sesión abierta";
 
 export interface Evento {
   id: number;
@@ -114,6 +118,55 @@ export function derivarEscena(
   return { orquestador, rrhh, agentes, carpetasEnRevision: decisionesPendientes };
 }
 
+/** Datos del buzón que animan al Orquestador. Todos salen de filas registradas. */
+export interface BuzonEscena {
+  sinLeer: number;
+  /** Último mensaje de cada autor. */
+  ultimoAriel: { id: string; creado: string } | null;
+  ultimoOrquestador: { id: string; texto: string; creado: string } | null;
+  leido: string | null;
+  latido: string | null;
+}
+
+export interface EstadoOrquestador {
+  estado: EstadoVisible;
+  /** Texto para el globo de diálogo, solo mientras la respuesta es reciente. */
+  dice: string | null;
+  /** Id del mensaje de Ariel que vuela hacia la mesa (animación de envío). */
+  cartaEnVuelo: string | null;
+  sesion: "reciente" | "sin_contacto";
+}
+
+export const SEGUNDOS_RESPUESTA_VISIBLE = 90;
+export const SEGUNDOS_LECTURA_VISIBLE = 120;
+export const SEGUNDOS_CARTA = 4;
+/** Sin llamadas a oficina-mcp en este tiempo, la web dice que no hay sesión abierta (es lo único que puede saber). */
+export const MINUTOS_SESION = 20;
+
+const seg = (desde: string | null, ahora: number) => (desde ? (ahora - new Date(desde).getTime()) / 1000 : Infinity);
+
+/**
+ * Estado visible del Orquestador combinando el encargo y el buzón. Prioridad: respuesta reciente,
+ * mensaje sin leer, lectura reciente, estado del encargo, y por último la falta de sesión.
+ */
+export function derivarOrquestador(base: EstadoVisible, b: BuzonEscena, ahoraIso: string, hayEncargoAbierto: boolean): EstadoOrquestador {
+  const ahora = new Date(ahoraIso).getTime();
+  const sesion = seg(b.latido, ahora) <= MINUTOS_SESION * 60 ? "reciente" : "sin_contacto";
+  const cartaEnVuelo = b.ultimoAriel && seg(b.ultimoAriel.creado, ahora) <= SEGUNDOS_CARTA ? b.ultimoAriel.id : null;
+  const respuestaReciente =
+    b.ultimoOrquestador &&
+    seg(b.ultimoOrquestador.creado, ahora) <= SEGUNDOS_RESPUESTA_VISIBLE &&
+    (!b.ultimoAriel || b.ultimoOrquestador.creado >= b.ultimoAriel.creado);
+  if (respuestaReciente) {
+    const t = b.ultimoOrquestador!.texto.replace(/\s+/g, " ").trim();
+    return { estado: "Te respondió", dice: t.length > 70 ? `${t.slice(0, 67)}…` : t, cartaEnVuelo, sesion };
+  }
+  if (b.sinLeer > 0) return { estado: "Mensaje sin leer", dice: null, cartaEnVuelo, sesion };
+  if (seg(b.leido, ahora) <= SEGUNDOS_LECTURA_VISIBLE) return { estado: "Leyó tus mensajes", dice: null, cartaEnVuelo, sesion };
+  if (!hayEncargoAbierto && sesion === "sin_contacto") return { estado: "Sin sesión abierta", dice: null, cartaEnVuelo, sesion };
+  return { estado: base, dice: null, cartaEnVuelo, sesion };
+}
+
 /** Frase corta y verificable para el panel de actividad. No describe razonamiento privado. */
 export function describirEvento(e: Evento, nombres: Record<string, string>): string {
   const n = (id: unknown) => nombres[String(id)] ?? String(id);
@@ -155,6 +208,12 @@ export function describirEvento(e: Evento, nombres: Record<string, string>): str
       return "RR. HH. propuso recursos para la biblioteca";
     case "recurso_guardado":
       return "Recurso guardado en la biblioteca";
+    case "mensaje_ariel":
+      return `Ariel dejó un mensaje en el buzón${Number(e.datos.archivos) ? ` con ${e.datos.archivos} archivo(s)` : ""}`;
+    case "buzon_leido":
+      return `El Orquestador leyó ${e.datos.mensajes} mensaje(s) del buzón`;
+    case "orquestador_respondio":
+      return `El Orquestador respondió${Number(e.datos.archivos) ? ` y entregó ${e.datos.archivos} archivo(s)` : ""}`;
     default:
       return e.tipo;
   }

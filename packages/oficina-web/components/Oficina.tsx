@@ -1,9 +1,25 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { derivarEscena, describirEvento, type FichaVista } from "@/lib/escena";
+import { derivarEscena, derivarOrquestador, describirEvento, type BuzonEscena, type FichaVista } from "@/lib/escena";
 import type { Decision, EstadoOficina, Resultado } from "@/lib/estado";
+import Chat from "./Chat";
 import Escena, { type Seleccion } from "./Escena";
+import Gasto, { gastoReal, tokensDe, usd } from "./Gasto";
+
+export type Pestana = "conversacion" | "encargo" | "gasto";
+
+function buzonEscena(e: EstadoOficina | null): BuzonEscena {
+  const m = e?.buzon.mensajes ?? [];
+  const ultimo = (autor: string) => [...m].reverse().find((x) => x.autor === autor) ?? null;
+  return {
+    sinLeer: m.filter((x) => x.autor === "ariel" && !x.leido_en).length,
+    ultimoAriel: ultimo("ariel"),
+    ultimoOrquestador: ultimo("orquestador"),
+    leido: e?.buzon.leido ?? null,
+    latido: e?.buzon.latido ?? null,
+  };
+}
 
 const INTERVALO_MS = 1500; // criterio 7: la escena refleja el estado en menos de 3 s
 
@@ -22,6 +38,7 @@ export default function Oficina() {
   const [estado, setEstado] = useState<EstadoOficina | null>(null);
   const [conexion, setConexion] = useState<"ok" | "error">("ok");
   const [seleccion, setSeleccion] = useState<Seleccion | null>({ tipo: "orquestador" });
+  const [pestana, setPestana] = useState<Pestana>("conversacion");
 
   const cargar = useCallback(async () => {
     try {
@@ -50,6 +67,32 @@ export default function Oficina() {
         : derivarEscena([], null, [], 0),
     [estado],
   );
+  const buzon = useMemo(() => buzonEscena(estado), [estado]);
+  const orquestador = useMemo(
+    () =>
+      derivarOrquestador(
+        escena.orquestador,
+        buzon,
+        estado?.ahora ?? new Date().toISOString(),
+        !!estado?.encargo && !["emitido", "cerrado"].includes(estado.encargo.estado),
+      ),
+    [escena.orquestador, buzon, estado?.ahora, estado?.encargo],
+  );
+  const entregables = useMemo(
+    () =>
+      (estado?.buzon.mensajes ?? [])
+        .filter((m) => m.autor === "orquestador" && estado?.encargo && m.encargo_id === estado.encargo.id)
+        .reduce((n, m) => n + m.archivos.length, 0),
+    [estado],
+  );
+  const contador = useMemo(() => {
+    const filas = estado?.consumo.total ?? [];
+    return { tokens: filas.reduce((n, f) => n + tokensDe(f), 0), pagado: gastoReal(filas).rango.min };
+  }, [estado?.consumo.total]);
+  const abrir = (p: Pestana) => {
+    setSeleccion({ tipo: "orquestador" });
+    setPestana(p);
+  };
   const nombres = useMemo(
     () => Object.fromEntries((estado?.fichas ?? []).map((f) => [f.id, f.nombre])),
     [estado?.fichas],
@@ -82,12 +125,23 @@ export default function Oficina() {
               )}
             </div>
           </div>
+          <div className="contadores">
+            <button className="chip-contador" onClick={() => abrir("conversacion")} title="Conversación con el Orquestador">
+              💬 {buzon.sinLeer > 0 ? `${buzon.sinLeer} sin leer` : "Buzón"}
+            </button>
+            <button className="chip-contador" onClick={() => abrir("gasto")} title="Tokens registrados y gasto en APIs">
+              🪙 {contador.tokens.toLocaleString("es-DO")} tokens · {usd(contador.pagado)} pagado
+            </button>
+          </div>
           <Aviso estado={estado} conexion={conexion} alPreparar={cargar} />
         </header>
 
         <Escena
           fichas={estado?.fichas ?? []}
           estados={escena}
+          orquestador={orquestador}
+          sinLeer={buzon.sinLeer}
+          entregables={entregables}
           encargosEnMuro={estado?.muro.length ?? 0}
           seleccion={seleccion}
           alSeleccionar={setSeleccion}
@@ -104,7 +158,16 @@ export default function Oficina() {
       </section>
 
       <aside className="panel">
-        <Panel estado={estado} seleccion={seleccion} nombres={nombres} estadosEscena={escena} alResponder={cargar} />
+        <Panel
+          estado={estado}
+          seleccion={seleccion}
+          nombres={nombres}
+          estadosEscena={escena}
+          estadoOrquestador={orquestador.estado}
+          pestana={pestana}
+          alCambiarPestana={setPestana}
+          alResponder={cargar}
+        />
       </aside>
     </div>
   );
@@ -128,9 +191,9 @@ function Aviso({ estado, conexion, alPreparar }: { estado: EstadoOficina | null;
     };
     return (
       <div className="aviso">
-        <p>La base de datos está conectada pero todavía no tiene tablas.</p>
+        <p>{estado.detalle === "actualizar" ? "La base de datos necesita las tablas nuevas de esta versión (buzón y archivos)." : "La base de datos está conectada pero todavía no tiene tablas."}</p>
         <button className="boton-primario" disabled={preparando} onClick={() => void preparar()}>
-          {preparando ? "Preparando…" : "Preparar base de datos"}
+          {preparando ? "Preparando…" : estado.detalle === "actualizar" ? "Actualizar base de datos" : "Preparar base de datos"}
         </button>
         {fallo && <p>{fallo}</p>}
       </div>
@@ -145,12 +208,18 @@ function Panel({
   seleccion,
   nombres,
   estadosEscena,
+  estadoOrquestador,
+  pestana,
+  alCambiarPestana,
   alResponder,
 }: {
   estado: EstadoOficina | null;
   seleccion: Seleccion | null;
   nombres: Record<string, string>;
   estadosEscena: ReturnType<typeof derivarEscena>;
+  estadoOrquestador: string;
+  pestana: Pestana;
+  alCambiarPestana: (p: Pestana) => void;
   alResponder: () => Promise<void>;
 }) {
   if (!estado) return <p className="vacio">Cargando la oficina…</p>;
@@ -249,10 +318,47 @@ function Panel({
     );
   }
 
-  // Mesa del Orquestador (vista por defecto)
+  // Mesa del Orquestador (vista por defecto): conversación, encargo y gasto.
+  const sinLeer = estado.buzon.mensajes.filter((m) => m.autor === "ariel" && !m.leido_en).length;
+  const pestanas = (
+    <div className="pestanas" role="tablist">
+      {(
+        [
+          ["conversacion", sinLeer ? `Conversación (${sinLeer})` : "Conversación"],
+          ["encargo", "Encargo"],
+          ["gasto", "Gasto"],
+        ] as const
+      ).map(([id, texto]) => (
+        <button key={id} role="tab" aria-selected={pestana === id} className={pestana === id ? "activo" : ""} onClick={() => alCambiarPestana(id)}>
+          {texto}
+        </button>
+      ))}
+    </div>
+  );
+  const cabecera = <CabeceraPanel titulo="Mesa del Orquestador" chip="Sesión nativa" estado={estadoOrquestador} />;
+
+  if (pestana === "conversacion") {
+    return (
+      <>
+        {cabecera}
+        {pestanas}
+        <Chat buzon={estado.buzon} ahora={estado.ahora} encargoId={estado.encargo && !["emitido", "cerrado"].includes(estado.encargo.estado) ? estado.encargo.id : null} alEnviar={alResponder} />
+      </>
+    );
+  }
+  if (pestana === "gasto") {
+    return (
+      <>
+        {cabecera}
+        {pestanas}
+        <Gasto encargo={estado.consumo.encargo} total={estado.consumo.total} hayEncargo={!!estado.encargo} />
+      </>
+    );
+  }
   return (
     <>
-      <CabeceraPanel titulo="Mesa del Orquestador" chip="Sesión nativa" estado={estadosEscena.orquestador} />
+      {cabecera}
+      {pestanas}
       <Bloque titulo="Plan del encargo">
         {estado.plan ? <p>{estado.plan}</p> : <p className="vacio">El Orquestador aún no registra un plan.</p>}
         {estado.equipo.length > 0 && (
@@ -316,7 +422,7 @@ function TarjetaResultado({ r, nombre }: { r: Resultado; nombre?: string }) {
   const procedencia =
     r.origen === "api"
       ? `${r.proveedor} · ${r.modelo} · ${r.tokens_entrada ?? "?"} + ${r.tokens_salida ?? "?"} tokens · ${hora(r.creado)}`
-      : `Relevo nativo (${r.modelo_nativo ?? "sesión"}) · original: ${r.proveedor_original}, ${r.motivo_relevo} · ${hora(r.creado)}`;
+      : `${r.motivo_relevo === "sin_clave" ? "Subagente de la sesión" : "Relevo nativo"} (${r.modelo_nativo ?? "sesión"}) · original: ${r.proveedor_original}, ${r.motivo_relevo}${r.tokens_total != null ? ` · ${r.tokens_total} tokens` : ""} · ${hora(r.creado)}`;
   return (
     <article className={r.origen === "api" ? "resultado" : "resultado relevo"}>
       {nombre && <strong>{nombre}</strong>}

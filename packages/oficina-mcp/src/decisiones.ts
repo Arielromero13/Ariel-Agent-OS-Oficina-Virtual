@@ -34,6 +34,10 @@ export async function responderDecision(
   const d = rows[0];
   if (!d) throw new ReglaOficina(`No existe la decisión ${a.decision_id}`);
   if (d.estado !== "pendiente") throw new ReglaOficina(`La decisión ${a.decision_id} ya fue respondida (${d.estado}).`);
+  const enc = await db.query<{ estado: string }>("SELECT estado FROM encargos WHERE id = $1", [d.encargo_id]);
+  if (enc.rows[0] && ["cerrado", "emitido"].includes(enc.rows[0].estado)) {
+    throw new ReglaOficina(`El encargo ${d.encargo_id} ya está ${enc.rows[0].estado}: no se responden sus decisiones. Reábrelo si hace falta.`);
+  }
   // La condición sobre 'pendiente' evita que dos respuestas simultáneas (tablet y sesión) se pisen.
   const r = await db.query<{ id: string }>(
     `UPDATE decisiones SET estado = $2, comentario = $3, decidido_via = $4, decidido_en = now()
