@@ -140,3 +140,22 @@ test("plantillas: se proponen con su archivo y solo se guardan con la aprobació
   const encontrados = await oficina.buscarPerfiles({ consulta: "PAT" });
   assert.equal(encontrados.recursos[0].archivo_id, "arc_p");
 });
+
+import { mensajesNuevos } from "../src/vigilante.js";
+
+test("vigilante: avisa una vez por mensaje sin leer, sin mostrar su texto, y no repite lo ya avisado", async () => {
+  const db = await nuevaBase();
+  const vistos = new Set<string>();
+  assert.deepEqual(await mensajesNuevos(db, vistos), []);
+  await db.query("INSERT INTO mensajes (id, autor, texto) VALUES ('m1', 'ariel', 'hola')");
+  await db.query("INSERT INTO mensajes (id, autor, texto, leido_en) VALUES ('m2', 'ariel', 'viejo', now())");
+  await db.query("INSERT INTO mensajes (id, autor, texto) VALUES ('m3', 'orquestador', 'respuesta')");
+  const primero = await mensajesNuevos(db, vistos);
+  assert.deepEqual(primero, [{ id: "m1", caracteres: 4, archivos: 0 }]);
+  assert.deepEqual(await mensajesNuevos(db, vistos), [], "no repite el aviso mientras siga sin leer");
+  await db.query("UPDATE mensajes SET leido_en = now() WHERE id = 'm1'");
+  await mensajesNuevos(db, vistos);
+  assert.equal(vistos.size, 0, "al leerse deja de recordarse");
+  await db.query("INSERT INTO mensajes (id, autor, texto) VALUES ('m4', 'ariel', 'otro')");
+  assert.equal((await mensajesNuevos(db, vistos))[0].id, "m4");
+});

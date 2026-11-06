@@ -7,7 +7,8 @@
     "start": "tsx src/index.ts",
     "migrar": "tsx src/migrar.ts",
     "test": "node --import tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "vigilar": "tsx src/vigilar.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
