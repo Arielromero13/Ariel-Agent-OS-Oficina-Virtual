@@ -5,21 +5,12 @@ import type { Db } from "./db.js";
 import { RAIZ_REPO } from "./db.js";
 import { PROVEEDORES, claveDe, llamarProveedor, type Fetch, type Mensaje } from "./proveedores.js";
 import { ReglaOficina, registrarEvento, responderDecision } from "./decisiones.js";
+import { sincronizarFichasEn, type Ficha } from "./esquema.js";
 
 export { ReglaOficina };
 
 const nuevoId = (prefijo: string) => `${prefijo}_${randomUUID().slice(0, 8)}`;
 
-export interface Ficha {
-  id: string;
-  nombre: string;
-  especialidad: string;
-  resumen: string;
-  proveedor: string;
-  modelo: string;
-  instrucciones: string;
-  [k: string]: unknown;
-}
 
 interface Encargo {
   id: string;
@@ -71,24 +62,11 @@ export class Oficina {
 
   /** Copia las fichas de fichas/*.json al estado compartido para que la oficina las muestre. */
   async sincronizarFichas(dir = join(RAIZ_REPO, "fichas")): Promise<string[]> {
-    const ids: string[] = [];
-    for (const archivo of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
-      const ficha = JSON.parse(readFileSync(join(dir, archivo), "utf8")) as Ficha & { version?: number };
-      for (const campo of ["id", "nombre", "especialidad", "resumen", "proveedor", "modelo", "instrucciones"]) {
-        if (typeof ficha[campo] !== "string" || ficha[campo] === "") {
-          throw new Error(`La ficha ${archivo} no tiene el campo obligatorio "${campo}"`);
-        }
-      }
-      await this.db.query(
-        `INSERT INTO fichas (id, nombre, especialidad, resumen, proveedor, modelo, contenido, version, activa)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
-         ON CONFLICT (id) DO UPDATE SET nombre = $2, especialidad = $3, resumen = $4, proveedor = $5,
-           modelo = $6, contenido = $7, version = $8, activa = TRUE, actualizado = now()`,
-        [ficha.id, ficha.nombre, ficha.especialidad, ficha.resumen, ficha.proveedor, ficha.modelo, JSON.stringify(ficha), ficha.version ?? 1],
-      );
-      ids.push(ficha.id);
-    }
-    return ids;
+    const fichas = readdirSync(dir)
+      .filter((f) => f.endsWith(".json"))
+      .sort()
+      .map((archivo) => ({ origen: archivo, ficha: JSON.parse(readFileSync(join(dir, archivo), "utf8")) as Ficha }));
+    return sincronizarFichasEn(this.db, fichas);
   }
 
   /** Publica qué proveedores tienen clave configurada. Nunca publica la clave. */

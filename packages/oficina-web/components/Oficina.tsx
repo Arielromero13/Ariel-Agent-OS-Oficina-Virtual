@@ -82,7 +82,7 @@ export default function Oficina() {
               )}
             </div>
           </div>
-          <Aviso estado={estado} conexion={conexion} />
+          <Aviso estado={estado} conexion={conexion} alPreparar={cargar} />
         </header>
 
         <Escena
@@ -110,13 +110,32 @@ export default function Oficina() {
   );
 }
 
-function Aviso({ estado, conexion }: { estado: EstadoOficina | null; conexion: "ok" | "error" }) {
+function Aviso({ estado, conexion, alPreparar }: { estado: EstadoOficina | null; conexion: "ok" | "error"; alPreparar: () => Promise<void> }) {
+  const [preparando, setPreparando] = useState(false);
+  const [fallo, setFallo] = useState<string | null>(null);
   if (conexion === "error") return <p className="aviso">Sin conexión con el servidor. Reintentando…</p>;
   if (!estado) return null;
   if (estado.base === "sin_configurar")
     return <p className="aviso">Estado compartido no configurado: el servidor no ve ninguna variable con una cadena de conexión de Postgres. Revisa que la base esté conectada a este proyecto en Production y vuelve a desplegar.</p>;
-  if (estado.base === "sin_migrar")
-    return <p className="aviso">La base de datos existe pero no tiene tablas. Ejecuta la migración de oficina-mcp.</p>;
+  if (estado.base === "sin_migrar") {
+    const preparar = async () => {
+      setPreparando(true);
+      setFallo(null);
+      const r = await fetch("/api/preparar", { method: "POST" });
+      setPreparando(false);
+      if (!r.ok) setFallo(((await r.json().catch(() => ({}))) as { error?: string }).error ?? "No se pudo preparar la base");
+      await alPreparar();
+    };
+    return (
+      <div className="aviso">
+        <p>La base de datos está conectada pero todavía no tiene tablas.</p>
+        <button className="boton-primario" disabled={preparando} onClick={() => void preparar()}>
+          {preparando ? "Preparando…" : "Preparar base de datos"}
+        </button>
+        {fallo && <p>{fallo}</p>}
+      </div>
+    );
+  }
   if (estado.base === "error") return <p className="aviso">Error al leer el estado: {estado.detalle}</p>;
   return null;
 }
