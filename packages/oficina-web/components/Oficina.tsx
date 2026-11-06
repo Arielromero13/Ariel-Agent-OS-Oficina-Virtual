@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { derivarEscena, derivarOrquestador, describirEvento, type BuzonEscena, type FichaVista } from "@/lib/escena";
 import type { Decision, EstadoOficina, FilaConsumo, Resultado } from "@/lib/estado";
+import { derivarEspera } from "@/lib/espera";
 import Chat from "./Chat";
 import Escena, { type Seleccion } from "./Escena";
 import Gasto, { gastoReal, tokensDe, usd } from "./Gasto";
@@ -68,6 +69,10 @@ export default function Oficina() {
     [estado],
   );
   const buzon = useMemo(() => buzonEscena(estado), [estado]);
+  const espera = useMemo(
+    () => (estado ? derivarEspera(estado.buzon, estado.ahora) : derivarEspera({ mensajes: [], latido: null, progreso: [] }, new Date().toISOString())),
+    [estado],
+  );
   const orquestador = useMemo(
     () =>
       derivarOrquestador(
@@ -75,8 +80,9 @@ export default function Oficina() {
         buzon,
         estado?.ahora ?? new Date().toISOString(),
         !!estado?.encargo && !["emitido", "cerrado"].includes(estado.encargo.estado),
+        espera.fase === "trabajando",
       ),
-    [escena.orquestador, buzon, estado?.ahora, estado?.encargo],
+    [escena.orquestador, buzon, estado?.ahora, estado?.encargo, espera.fase],
   );
   const entregables = useMemo(
     () =>

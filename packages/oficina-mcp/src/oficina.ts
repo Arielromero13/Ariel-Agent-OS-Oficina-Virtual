@@ -442,6 +442,19 @@ export class Oficina {
     return { recurso_id: id, decision_id, accion: "Cuando Ariel apruebe, llama a guardar_recurso con este recurso_id y decision_id." };
   }
 
+  /**
+   * Nota corta de lo que el Orquestador está haciendo ahora («Leyendo el informe…»). La oficina la
+   * muestra mientras Ariel espera. Es texto libre del Orquestador: nunca porcentajes ni tiempos.
+   */
+  async avisarProgreso(a: { texto: string; encargo_id?: string }) {
+    const texto = a.texto.replace(/\s+/g, " ").trim().slice(0, 140);
+    if (!texto) throw new ReglaOficina("La nota de progreso está vacía.");
+    if (/\d+\s*%/.test(texto)) throw new ReglaOficina("No se publican porcentajes de avance: describe qué estás haciendo, no cuánto falta.");
+    if (a.encargo_id) await this.encargo(a.encargo_id);
+    await this.evento(a.encargo_id ?? null, "progreso", "orquestador", { texto });
+    return { publicado: texto };
+  }
+
   // ---------- Buzón y archivos ----------
 
   /** Registra que el Orquestador está en contacto. La web muestra el último contacto, no una sesión "en línea". */

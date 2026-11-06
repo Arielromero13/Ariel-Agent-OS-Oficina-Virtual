@@ -62,3 +62,50 @@ test("un agente camina a la Mesa de revisión solo justo después de entregar", 
   assert.deepEqual(derivarEscena(fichas, encargo, ev(hace(60)), 0, AHORA).entregando, []);
   assert.deepEqual(derivarEscena(fichas, encargo, ev(hace(3)), 0).entregando, [], "sin hora del servidor no se anima");
 });
+
+import { derivarEspera, duracion } from "../lib/espera";
+
+const msg = (id: string, autor: "ariel" | "orquestador", creado: string, leido_en: string | null = null) =>
+  ({ id, encargo_id: null, autor, texto: "x", leido_en, creado, archivos: [] }) as never;
+
+test("espera: cola → trabajando → sin actividad → respondido, solo con datos registrados", () => {
+  const base = { latido: hace(5), progreso: [] as { id: number; texto: string; creado: string }[] };
+  // Enviado, sin leer, con contacto vivo (vigilante): en cola.
+  let e = derivarEspera({ ...base, mensajes: [msg("a", "ariel", hace(8))] }, AHORA);
+  assert.equal(e.fase, "cola");
+  assert.equal(e.segundos, 8);
+  // Sin leer y sin contacto: no se promete que lo lea pronto.
+  e = derivarEspera({ ...base, latido: hace(600), mensajes: [msg("a", "ariel", hace(8))] }, AHORA);
+  assert.equal(e.fase, "sin_actividad");
+  assert.equal(e.leido, false);
+  // Leído hace 40 s, con dos notas: trabajando, el contador cuenta desde la lectura.
+  const notas = [
+    { id: 1, texto: "Leyendo el informe", creado: hace(30) },
+    { id: 2, texto: "Revisando la tabla", creado: hace(10) },
+  ];
+  e = derivarEspera({ ...base, progreso: notas, mensajes: [msg("a", "ariel", hace(50), hace(40))] }, AHORA);
+  assert.equal(e.fase, "trabajando");
+  assert.equal(e.segundos, 40);
+  assert.deepEqual(e.notas, ["Leyendo el informe", "Revisando la tabla"]);
+  // Las notas de antes del mensaje no cuentan.
+  e = derivarEspera({ ...base, progreso: [{ id: 0, texto: "viejo", creado: hace(500) }], mensajes: [msg("a", "ariel", hace(50), hace(40))] }, AHORA);
+  assert.deepEqual(e.notas, []);
+  // Leído hace 10 min, sin notas ni contacto: sin actividad registrada.
+  e = derivarEspera({ latido: hace(900), progreso: [], mensajes: [msg("a", "ariel", hace(620), hace(600))] }, AHORA);
+  assert.equal(e.fase, "sin_actividad");
+  assert.equal(e.leido, true);
+  // Con contacto vivo no se da por colgado aunque tarde.
+  e = derivarEspera({ latido: hace(4), progreso: [], mensajes: [msg("a", "ariel", hace(620), hace(600))] }, AHORA);
+  assert.equal(e.fase, "trabajando");
+  // Respondido: nada que mostrar.
+  e = derivarEspera({ ...base, mensajes: [msg("a", "ariel", hace(50), hace(40)), msg("b", "orquestador", hace(5))] }, AHORA);
+  assert.equal(e.fase, "ninguna");
+  assert.equal(duracion(45), "45 s");
+  assert.equal(duracion(130), "2 min 10 s");
+});
+
+test("el Orquestador se ve «Trabajando en tu mensaje» mientras la espera sigue, aunque pase la ventana de lectura", () => {
+  const b: BuzonEscena = { ...vacio, leido: hace(900), ultimoAriel: { id: "m1", creado: hace(920) } };
+  assert.equal(derivarOrquestador("En reposo", b, AHORA, false, true).estado, "Trabajando en tu mensaje");
+  assert.equal(derivarOrquestador("En reposo", b, AHORA, false, false).estado, "En reposo");
+});

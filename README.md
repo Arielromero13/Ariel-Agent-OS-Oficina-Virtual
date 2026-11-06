@@ -32,6 +32,7 @@ La oficina se inspira en la cercanía visual de Habbo Hotel y Roblox: un espacio
 - [Tramo 1](docs/08-tramo-1.md)
 - [Tramo 2: conversación, archivos y gasto](docs/11-tramo-2.md)
 - [Tramos futuros](docs/09-tramos-futuros.md)
+- [Brief para llevar el juego al siguiente nivel (AI Studio)](docs/12-brief-ai-studio.md)
 - [Despliegue](docs/10-despliegue.md)
 - [Diseño de referencia](docs/design/README.md)
 

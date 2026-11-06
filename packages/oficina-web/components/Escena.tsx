@@ -79,11 +79,12 @@ const COLOR_GLOBO: Record<EstadoVisible, { fondo: string; texto: string }> = {
   "No configurado": { fondo: "#e2e8f0", texto: "#64748b" },
   "Mensaje sin leer": { fondo: "#6366f1", texto: "#ffffff" },
   "Leyó tus mensajes": { fondo: "#14b8a6", texto: "#ffffff" },
+  "Trabajando en tu mensaje": { fondo: "#14b8a6", texto: "#ffffff" },
   "Te respondió": { fondo: "#0f766e", texto: "#ffffff" },
   "Sin sesión abierta": { fondo: "#e2e8f0", texto: "#64748b" },
 };
 
-const ACTIVO = new Set<EstadoVisible>(["Analizando", "Coordinando", "Reuniendo equipo", "Leyó tus mensajes", "Te respondió"]);
+const ACTIVO = new Set<EstadoVisible>(["Analizando", "Coordinando", "Reuniendo equipo", "Leyó tus mensajes", "Trabajando en tu mensaje", "Te respondió"]);
 
 function Globo({ x, y, estado }: { x: number; y: number; estado: EstadoVisible }) {
   const c = COLOR_GLOBO[estado];

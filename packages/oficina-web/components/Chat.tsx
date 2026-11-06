@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import type { Archivo, Buzon, MensajeBuzon } from "@/lib/estado";
 import { MINUTOS_SESION } from "@/lib/escena";
+import { derivarEspera, duracion } from "@/lib/espera";
 
 const hora = (iso: string) =>
   new Date(iso).toLocaleString("es-DO", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false });
@@ -59,10 +60,15 @@ export default function Chat({
   const hilo = useRef<HTMLDivElement>(null);
   const selector = useRef<HTMLInputElement>(null);
   const ultimo = buzon.mensajes.at(-1)?.id;
+  const espera = derivarEspera(buzon, ahora);
 
   useEffect(() => {
-    if (hilo.current) hilo.current.scrollTop = hilo.current.scrollHeight;
-  }, [ultimo]);
+    // Después del pintado, para que cuente la altura real del indicador y de las notas.
+    const r = requestAnimationFrame(() => {
+      if (hilo.current) hilo.current.scrollTop = hilo.current.scrollHeight;
+    });
+    return () => cancelAnimationFrame(r);
+  }, [ultimo, espera.fase, espera.notas.length]);
 
   const sinLeer = buzon.mensajes.filter((m) => m.autor === "ariel" && !m.leido_en).length;
   const [copiado, setCopiado] = useState(false);
@@ -131,6 +137,7 @@ export default function Chat({
         {buzon.mensajes.map((m) => (
           <Burbuja key={m.id} m={m} />
         ))}
+        {espera.fase !== "ninguna" && <Esperando espera={espera} />}
       </div>
 
       <div className="redactor">
@@ -187,6 +194,48 @@ export default function Chat({
         </div>
         {!buzon.almacen.configurado && <p className="detalle">Para adjuntar archivos falta conectar Vercel Blob al proyecto.</p>}
       </div>
+    </div>
+  );
+}
+
+/** Indicador de espera por fases reales. Sin porcentajes: el sistema no mide cuánto falta. */
+function Esperando({ espera }: { espera: ReturnType<typeof derivarEspera> }) {
+  const sinActividad = espera.fase === "sin_actividad";
+  return (
+    <div className={sinActividad ? "espera sin-actividad" : "espera"} role="status" aria-live="polite">
+      <ol className="pasos">
+        <li className="hecho">Enviado</li>
+        <li className={espera.leido ? "hecho" : espera.fase === "cola" ? "activo" : ""}>Leído</li>
+        <li className={espera.fase === "trabajando" ? "activo" : ""}>Trabajando</li>
+      </ol>
+      {espera.fase === "cola" && (
+        <p className="estado-espera">
+          <span className="puntos" aria-hidden><i /><i /><i /></span> En cola: el Orquestador lo lee en segundos · {duracion(espera.segundos)}
+        </p>
+      )}
+      {espera.fase === "trabajando" && (
+        <>
+          <p className="estado-espera">
+            <span className="puntos" aria-hidden><i /><i /><i /></span> El Orquestador está trabajando en tu mensaje · {duracion(espera.segundos)}
+          </p>
+          {espera.notas.length > 0 && (
+            <ul className="notas">
+              {espera.notas.map((n, i) => (
+                <li key={`${i}-${n}`} className={i === espera.notas.length - 1 ? "ultima" : ""}>
+                  {n}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+      {sinActividad && (
+        <p className="estado-espera">
+          {espera.leido
+            ? `Sin actividad registrada desde hace ${duracion(espera.segundos)}. Puede que la sesión se haya cerrado; tu mensaje queda guardado.`
+            : "Esperando a que el Orquestador abra sesión. Tu mensaje queda guardado en el buzón."}
+        </p>
+      )}
     </div>
   );
 }

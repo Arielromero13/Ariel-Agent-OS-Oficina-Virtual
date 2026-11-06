@@ -71,12 +71,20 @@ export interface RecursoVista {
   archivo_nombre: string | null;
 }
 
+export interface NotaProgreso {
+  id: number;
+  texto: string;
+  creado: string;
+}
+
 export interface Buzon {
   mensajes: MensajeBuzon[];
   /** Último contacto del Orquestador con oficina-mcp. */
   latido: string | null;
   /** Última vez que el Orquestador leyó el buzón. */
   leido: string | null;
+  /** Notas recientes de lo que está haciendo el Orquestador (las publica él con avisar_progreso). */
+  progreso: NotaProgreso[];
   almacen: { configurado: boolean; acceso: "private" | "public" };
 }
 
@@ -108,7 +116,7 @@ export const VACIO: Omit<EstadoOficina, "base"> = {
   resultados: [],
   muro: [],
   biblioteca: [],
-  buzon: { mensajes: [], latido: null, leido: null, almacen: { configurado: false, acceso: "private" } },
+  buzon: { mensajes: [], latido: null, leido: null, progreso: [], almacen: { configurado: false, acceso: "private" } },
   consumo: { encargo: [], total: [] },
   ahora: new Date(0).toISOString(),
 };
@@ -137,10 +145,15 @@ async function leerBuzon(db: pg.Pool): Promise<Buzon> {
   const leido = await db.query<{ creado: string }>(
     "SELECT creado FROM eventos WHERE tipo = 'buzon_leido' ORDER BY id DESC LIMIT 1",
   );
+  const progreso = await db.query<NotaProgreso>(
+    `SELECT id::int AS id, datos->>'texto' AS texto, creado FROM eventos
+     WHERE tipo = 'progreso' AND creado > now() - interval '30 minutes' ORDER BY id DESC LIMIT 5`,
+  );
   return {
     mensajes: mensajes.rows.map((m) => ({ ...m, archivos: archivos.rows.filter((a) => a.mensaje_id === m.id) })),
     latido: latido.rows[0]?.latido ?? null,
     leido: leido.rows[0]?.creado ?? null,
+    progreso: progreso.rows.reverse(),
     almacen: almacen(),
   };
 }

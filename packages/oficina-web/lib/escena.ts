@@ -17,6 +17,7 @@ export type EstadoVisible =
   | "No configurado"
   | "Mensaje sin leer"
   | "Leyó tus mensajes"
+  | "Trabajando en tu mensaje"
   | "Te respondió"
   | "Sin sesión abierta";
 
@@ -166,7 +167,13 @@ const seg = (desde: string | null, ahora: number) => (desde ? (ahora - new Date(
  * Estado visible del Orquestador combinando el encargo y el buzón. Prioridad: respuesta reciente,
  * mensaje sin leer, lectura reciente, estado del encargo, y por último la falta de sesión.
  */
-export function derivarOrquestador(base: EstadoVisible, b: BuzonEscena, ahoraIso: string, hayEncargoAbierto: boolean): EstadoOrquestador {
+export function derivarOrquestador(
+  base: EstadoVisible,
+  b: BuzonEscena,
+  ahoraIso: string,
+  hayEncargoAbierto: boolean,
+  trabajandoEnMensaje = false,
+): EstadoOrquestador {
   const ahora = new Date(ahoraIso).getTime();
   const sesion = seg(b.latido, ahora) <= MINUTOS_SESION * 60 ? "reciente" : "sin_contacto";
   const cartaEnVuelo = b.ultimoAriel && seg(b.ultimoAriel.creado, ahora) <= SEGUNDOS_CARTA ? b.ultimoAriel.id : null;
@@ -179,6 +186,7 @@ export function derivarOrquestador(base: EstadoVisible, b: BuzonEscena, ahoraIso
     return { estado: "Te respondió", dice: t.length > 70 ? `${t.slice(0, 67)}…` : t, cartaEnVuelo, sesion };
   }
   if (b.sinLeer > 0) return { estado: "Mensaje sin leer", dice: null, cartaEnVuelo, sesion };
+  if (trabajandoEnMensaje) return { estado: "Trabajando en tu mensaje", dice: null, cartaEnVuelo, sesion };
   if (seg(b.leido, ahora) <= SEGUNDOS_LECTURA_VISIBLE) return { estado: "Leyó tus mensajes", dice: null, cartaEnVuelo, sesion };
   if (!hayEncargoAbierto && sesion === "sin_contacto") return { estado: "Sin sesión abierta", dice: null, cartaEnVuelo, sesion };
   return { estado: base, dice: null, cartaEnVuelo, sesion };

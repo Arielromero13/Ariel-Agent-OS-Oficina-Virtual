@@ -169,3 +169,16 @@ test("el token de Blob se detecta aunque la integración use un prefijo distinto
   assert.equal(tokenBlob({ OTRA_READ_WRITE_TOKEN: "no-es-de-blob" } as never), undefined, "ignora variables que no tienen forma de token de Blob");
   assert.equal(tokenBlob({ PATH: "/bin" } as never), undefined);
 });
+
+test("avisar_progreso publica notas cortas y rechaza porcentajes", async () => {
+  const db = await nuevaBase();
+  const oficina = new Oficina(db, { env: {} });
+  const r = await oficina.avisarProgreso({ texto: "  Leyendo   el informe  " });
+  assert.equal(r.publicado, "Leyendo el informe");
+  await assert.rejects(oficina.avisarProgreso({ texto: "Avance 40 %" }), ReglaOficina);
+  await assert.rejects(oficina.avisarProgreso({ texto: "   " }), ReglaOficina);
+  const largo = await oficina.avisarProgreso({ texto: "a".repeat(300) });
+  assert.equal(largo.publicado.length, 140);
+  const { rows } = await db.query<{ n: number }>("SELECT count(*)::int AS n FROM eventos WHERE tipo = 'progreso'");
+  assert.equal(rows[0].n, 2);
+});

@@ -178,6 +178,13 @@ herramienta(
 );
 
 herramienta(
+  "avisar_progreso",
+  "Publica una nota corta (máx. 140 caracteres) de lo que estás haciendo ahora, para que Ariel la vea en la oficina mientras espera. Úsala al empezar una tarea que tarde más de unos segundos y al cambiar de etapa. Nunca porcentajes ni tiempos.",
+  { texto: z.string().min(1), encargo_id: z.string().optional() },
+  (a) => oficina.avisarProgreso(a),
+);
+
+herramienta(
   "leer_buzon",
   "Lee los mensajes de Ariel que llegaron desde la oficina web (con sus adjuntos) y los marca como leídos.",
   { marcar_leidos: z.boolean().optional().describe("Por defecto sí.") },
