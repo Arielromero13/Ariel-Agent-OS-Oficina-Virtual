@@ -142,8 +142,8 @@ export class Oficina {
        WHERE activa AND (nombre ILIKE $1 OR especialidad ILIKE $1 OR resumen ILIKE $1) ORDER BY id`,
       [patron],
     );
-    const recursos = await this.db.query<{ id: string; tipo: string; titulo: string; resumen: string; version: number }>(
-      `SELECT id, tipo, titulo, resumen, version FROM biblioteca
+    const recursos = await this.db.query<{ id: string; tipo: string; titulo: string; resumen: string; version: number; archivo_id: string | null }>(
+      `SELECT id, tipo, titulo, resumen, version, archivo_id FROM biblioteca
        WHERE estado = 'guardado' AND (titulo ILIKE $1 OR resumen ILIKE $1) ORDER BY creado DESC LIMIT 20`,
       [patron],
     );
@@ -406,6 +406,40 @@ export class Oficina {
 
   async estadoProveedores() {
     return this.reportarProveedores();
+  }
+
+  /**
+   * Propone un recurso para la biblioteca sin cerrar el encargo (por ejemplo, una plantilla de
+   * informe que Ariel subió) y deja la decisión de tipo recurso para Ariel. Solo se guarda con
+   * guardar_recurso cuando la decisión esté aprobada.
+   */
+  async proponerRecurso(a: {
+    encargo_id: string;
+    tipo: "ficha" | "script" | "aprendizaje" | "plantilla";
+    titulo: string;
+    resumen: string;
+    contenido: string;
+    archivo_id?: string;
+  }) {
+    const enc = await this.encargo(a.encargo_id);
+    if (a.tipo === "plantilla" && !a.archivo_id) throw new ReglaOficina("Una plantilla necesita su archivo (archivo_id del buzón o de un entregable).");
+    if (a.archivo_id) {
+      const f = await this.db.query("SELECT 1 FROM archivos WHERE id = $1", [a.archivo_id]);
+      if (!f.rows[0]) throw new ReglaOficina(`No existe el archivo ${a.archivo_id}`);
+    }
+    const id = nuevoId("rec");
+    await this.db.query(
+      `INSERT INTO biblioteca (id, tipo, titulo, resumen, contenido, origen_encargo, estado, archivo_id)
+       VALUES ($1, $2, $3, $4, $5, $6, 'candidato', $7)`,
+      [id, a.tipo, a.titulo, a.resumen, a.contenido, enc.id, a.archivo_id ?? null],
+    );
+    await this.evento(enc.id, "rrhh_candidatos", "rrhh", { candidatos: [{ recurso_id: id, tipo: a.tipo, titulo: a.titulo }] });
+    const { decision_id } = await this.pedirDecision({
+      encargo_id: enc.id,
+      tipo: "recurso",
+      pregunta: `¿Guardo en la biblioteca ${a.tipo === "plantilla" ? "la plantilla" : `el recurso (${a.tipo})`} «${a.titulo}»? ${a.resumen}`,
+    });
+    return { recurso_id: id, decision_id, accion: "Cuando Ariel apruebe, llama a guardar_recurso con este recurso_id y decision_id." };
   }
 
   // ---------- Buzón y archivos ----------

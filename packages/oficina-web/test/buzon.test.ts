@@ -51,3 +51,14 @@ test("los adjuntos solo se aceptan si están en el almacén de Vercel Blob", () 
   const ok = validarMensaje({ texto: " Informe en PDF ", archivos: [] });
   assert.deepEqual(ok, { texto: "Informe en PDF", encargo_id: null, archivos: [] });
 });
+
+import { derivarEscena, type EncargoVista, type Evento, type FichaVista } from "../lib/escena";
+
+test("un agente camina a la Mesa de revisión solo justo después de entregar", () => {
+  const fichas: FichaVista[] = [{ id: "a", nombre: "A", especialidad: "", proveedor: "qwen", modelo: "m", configurado: true, respaldo_nativo: false }];
+  const encargo: EncargoVista = { id: "e", titulo: "T", descripcion: "", estado: "en_curso", sensibilidad: "externo", version_actual: 1 };
+  const ev = (creado: string): Evento[] => [{ id: 1, encargo_id: "e", tipo: "resultado_entregado", actor: "a", datos: { origen: "api" }, creado }];
+  assert.deepEqual(derivarEscena(fichas, encargo, ev(hace(3)), 0, AHORA).entregando, ["a"]);
+  assert.deepEqual(derivarEscena(fichas, encargo, ev(hace(60)), 0, AHORA).entregando, []);
+  assert.deepEqual(derivarEscena(fichas, encargo, ev(hace(3)), 0).entregando, [], "sin hora del servidor no se anima");
+});

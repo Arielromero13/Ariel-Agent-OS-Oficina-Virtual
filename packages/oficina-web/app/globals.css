@@ -165,3 +165,11 @@ button:disabled { opacity: 0.55; cursor: default; }
 @keyframes flotar { 0%, 100% { translate: 0 0; } 50% { translate: 0 -4px; } }
 @keyframes aparecer { from { opacity: 0; translate: 0 6px; } to { opacity: 1; translate: 0 0; } }
 @media (prefers-reduced-motion: reduce) { .sobre, .dialogo, .burbuja, .personaje.activo { animation: none; } }
+
+/* Entregas, vista previa y copiar */
+.camina { transition: transform 1.4s ease-in-out; }
+.vista-previa { display: block; width: 100%; max-width: 340px; margin-top: 8px; border-radius: 10px; border: 1px solid var(--borde); background: #fff; }
+.vista-previa.pdf { height: 360px; }
+.burbuja .ver { padding: 2px 8px; font-weight: 700; color: inherit; text-decoration: underline; }
+.presencia .copiar { display: block; margin-top: 8px; padding: 8px 12px; font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .camina { transition: none; } }

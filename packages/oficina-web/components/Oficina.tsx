@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { derivarEscena, derivarOrquestador, describirEvento, type BuzonEscena, type FichaVista } from "@/lib/escena";
-import type { Decision, EstadoOficina, Resultado } from "@/lib/estado";
+import type { Decision, EstadoOficina, FilaConsumo, Resultado } from "@/lib/estado";
 import Chat from "./Chat";
 import Escena, { type Seleccion } from "./Escena";
 import Gasto, { gastoReal, tokensDe, usd } from "./Gasto";
@@ -63,7 +63,7 @@ export default function Oficina() {
   const escena = useMemo(
     () =>
       estado
-        ? derivarEscena(estado.fichas, estado.encargo, estado.eventos, estado.decisiones.length)
+        ? derivarEscena(estado.fichas, estado.encargo, estado.eventos, estado.decisiones.length, estado.ahora)
         : derivarEscena([], null, [], 0),
     [estado],
   );
@@ -271,6 +271,30 @@ function Panel({
             ))}
           </ul>
         </Bloque>
+        <Bloque titulo="Biblioteca">
+          {estado.biblioteca.length === 0 ? (
+            <p className="vacio">Todavía no hay recursos. Las plantillas y aprendizajes aparecen aquí cuando apruebas guardarlos.</p>
+          ) : (
+            <ul className="lista">
+              {estado.biblioteca.map((r) => (
+                <li key={r.id}>
+                  <strong>
+                    {r.tipo === "plantilla" ? "📄 " : ""}
+                    {r.titulo}
+                  </strong>
+                  <span className="detalle">
+                    {r.tipo} · {r.estado === "guardado" ? "Guardado" : "Candidato (espera tu aprobación)"} · {r.resumen}
+                  </span>
+                  {r.archivo_id && (
+                    <a className="detalle" href={`/api/archivos/${encodeURIComponent(r.archivo_id)}`} download={r.archivo_nombre ?? undefined}>
+                      Descargar {r.archivo_nombre ?? "archivo"}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Bloque>
       </>
     );
   }
@@ -288,6 +312,7 @@ function Panel({
                 <span className="detalle">
                   {NOMBRE_ESTADO[e.estado] ?? e.estado} · {new Date(e.actualizado).toLocaleString("es-DO")}
                 </span>
+                <span className="detalle">{resumenGasto(e.consumo)}</span>
               </li>
             ))}
           </ul>
@@ -391,6 +416,15 @@ function Panel({
       </Bloque>
     </>
   );
+}
+
+/** Texto corto de tokens y costo de un encargo. Solo lo registrado; nada estimado. */
+function resumenGasto(filas: FilaConsumo[]): string {
+  const tokens = filas.reduce((n, f) => n + tokensDe(f), 0);
+  if (tokens === 0) return "Sin tokens registrados";
+  const { rango } = gastoReal(filas);
+  const sesion = filas.some((f) => f.origen === "sesion");
+  return `${tokens.toLocaleString("es-DO")} tokens · ${usd(rango.min)} pagado${sesion ? " (+ sesión nativa en tu suscripción)" : ""}`;
 }
 
 function modoFicha(f: FichaVista) {

@@ -54,19 +54,25 @@ export interface EstadosEscena {
   rrhh: EstadoVisible;
   agentes: Record<string, EstadoVisible>;
   carpetasEnRevision: number;
+  /** Agentes que acaban de entregar un resultado y llevan su carpeta a la Mesa de revisión. */
+  entregando: string[];
 }
+
+/** Segundos que el agente permanece en la Mesa de revisión tras entregar. */
+export const SEGUNDOS_ENTREGA = 8;
 
 export function derivarEscena(
   fichas: FichaVista[],
   encargo: EncargoVista | null,
   eventos: Evento[],
   decisionesPendientes: number,
+  ahoraIso?: string,
 ): EstadosEscena {
   const agentes: Record<string, EstadoVisible> = {};
   for (const f of fichas) agentes[f.id] = f.configurado || f.respaldo_nativo ? "En reposo" : "No configurado";
 
   if (!encargo) {
-    return { orquestador: "En reposo", rrhh: "En reposo", agentes, carpetasEnRevision: 0 };
+    return { orquestador: "En reposo", rrhh: "En reposo", agentes, carpetasEnRevision: 0, entregando: [] };
   }
 
   const propios = eventos.filter((e) => e.encargo_id === encargo.id).sort((a, b) => a.id - b.id);
@@ -115,7 +121,18 @@ export function derivarEscena(
       orquestador = "Completado";
   }
 
-  return { orquestador, rrhh, agentes, carpetasEnRevision: decisionesPendientes };
+  // Solo se anima una entrega registrada hace pocos segundos; la hora sale del servidor.
+  const entregando: string[] = [];
+  if (ahoraIso && abierto) {
+    const ahora = new Date(ahoraIso).getTime();
+    for (const e of propios) {
+      if (e.tipo === "resultado_entregado" && e.actor in agentes && (ahora - new Date(e.creado).getTime()) / 1000 <= SEGUNDOS_ENTREGA) {
+        if (!entregando.includes(e.actor)) entregando.push(e.actor);
+      }
+    }
+  }
+
+  return { orquestador, rrhh, agentes, carpetasEnRevision: decisionesPendientes, entregando };
 }
 
 /** Datos del buzón que animan al Orquestador. Todos salen de filas registradas. */

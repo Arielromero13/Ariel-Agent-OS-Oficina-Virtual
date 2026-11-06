@@ -60,6 +60,16 @@ export interface FilaConsumo {
   sin_tokens: number;
 }
 
+export interface RecursoVista {
+  id: string;
+  tipo: string;
+  titulo: string;
+  resumen: string;
+  estado: string;
+  archivo_id: string | null;
+  archivo_nombre: string | null;
+}
+
 export interface Buzon {
   mensajes: MensajeBuzon[];
   /** Último contacto del Orquestador con oficina-mcp. */
@@ -79,7 +89,8 @@ export interface EstadoOficina {
   eventos: Evento[];
   decisiones: Decision[];
   resultados: Resultado[];
-  muro: { id: string; titulo: string; estado: string; actualizado: string }[];
+  muro: { id: string; titulo: string; estado: string; actualizado: string; consumo: FilaConsumo[] }[];
+  biblioteca: RecursoVista[];
   buzon: Buzon;
   consumo: { encargo: FilaConsumo[]; total: FilaConsumo[] };
   /** Hora del servidor, para medir antigüedades sin depender del reloj de la tablet. */
@@ -95,6 +106,7 @@ export const VACIO: Omit<EstadoOficina, "base"> = {
   decisiones: [],
   resultados: [],
   muro: [],
+  biblioteca: [],
   buzon: { mensajes: [], latido: null, leido: null, almacen: { configurado: false, acceso: "private" } },
   consumo: { encargo: [], total: [] },
   ahora: new Date(0).toISOString(),
@@ -132,6 +144,38 @@ async function leerBuzon(db: pg.Pool): Promise<Buzon> {
   };
 }
 
+async function leerBiblioteca(db: pg.Pool): Promise<RecursoVista[]> {
+  const r = await db.query<RecursoVista>(
+    `SELECT b.id, b.tipo, b.titulo, b.resumen, b.estado, b.archivo_id, a.nombre AS archivo_nombre
+     FROM biblioteca b LEFT JOIN archivos a ON a.id = b.archivo_id
+     WHERE b.estado IN ('guardado', 'candidato') ORDER BY b.creado DESC LIMIT 50`,
+  );
+  return r.rows;
+}
+
+/** Consumo de cada encargo del muro, para mostrar su costo. */
+async function consumoPorEncargo(db: pg.Pool, ids: string[]): Promise<Record<string, FilaConsumo[]>> {
+  const salida: Record<string, FilaConsumo[]> = Object.fromEntries(ids.map((i) => [i, []]));
+  if (!ids.length) return salida;
+  const api = await db.query<FilaConsumo & { encargo_id: string }>(
+    `SELECT encargo_id, 'api' AS origen, proveedor, modelo, count(*)::int AS llamadas,
+            sum(tokens_entrada)::float8 AS tokens_entrada, sum(tokens_salida)::float8 AS tokens_salida,
+            NULL::float8 AS tokens_total, 0 AS sin_tokens
+     FROM llamadas WHERE estado = 'ok' AND encargo_id = ANY($1) GROUP BY encargo_id, proveedor, modelo`,
+    [ids],
+  );
+  const sesion = await db.query<FilaConsumo & { encargo_id: string }>(
+    `SELECT encargo_id, 'sesion' AS origen, 'anthropic' AS proveedor, COALESCE(modelo_nativo, 'sesión') AS modelo, count(*)::int AS llamadas,
+            sum(tokens_entrada)::float8 AS tokens_entrada, sum(tokens_salida)::float8 AS tokens_salida,
+            sum(CASE WHEN tokens_entrada IS NULL AND tokens_salida IS NULL THEN tokens_total END)::float8 AS tokens_total,
+            count(*) FILTER (WHERE tokens_entrada IS NULL AND tokens_salida IS NULL AND tokens_total IS NULL)::int AS sin_tokens
+     FROM resultados WHERE origen = 'relevo_nativo' AND encargo_id = ANY($1) GROUP BY encargo_id, modelo_nativo`,
+    [ids],
+  );
+  for (const f of [...api.rows, ...sesion.rows]) salida[f.encargo_id]?.push(f);
+  return salida;
+}
+
 /** Tokens por API (tabla llamadas) y por la sesión nativa (resultados de relevo). encargoId null = todos. */
 async function leerConsumo(db: pg.Pool, encargoId: string | null): Promise<FilaConsumo[]> {
   const api = await db.query<FilaConsumo>(
@@ -157,10 +201,13 @@ async function leerConsumo(db: pg.Pool, encargoId: string | null): Promise<FilaC
 export async function leerEstado(db: pg.Pool | null): Promise<EstadoOficina> {
   if (!db) return { base: "sin_configurar", ...VACIO };
   try {
-    const existe = await db.query("SELECT to_regclass('public.eventos') AS t, to_regclass('public.mensajes') AS m");
+    const existe = await db.query(
+      `SELECT to_regclass('public.eventos') AS t,
+              EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'biblioteca' AND column_name = 'archivo_id') AS al_dia`,
+    );
     if (!existe.rows[0]?.t) return { base: "sin_migrar", ...VACIO };
-    // Base de una versión anterior: la oficina-mcp la actualiza al arrancar, o el botón Preparar.
-    if (!existe.rows[0]?.m) return { base: "sin_migrar", detalle: "actualizar", ...VACIO };
+    // Base de una versión anterior (falta alguna migración): la oficina-mcp la actualiza al arrancar, o el botón Actualizar.
+    if (!existe.rows[0]?.al_dia) return { base: "sin_migrar", detalle: "actualizar", ...VACIO };
     const ahora = new Date().toISOString();
     const buzon = await leerBuzon(db);
     const consumoTotal = await leerConsumo(db, null);
@@ -177,11 +224,14 @@ export async function leerEstado(db: pg.Pool | null): Promise<EstadoOficina> {
        ORDER BY (estado IN ('emitido', 'cerrado')), actualizado DESC LIMIT 1`,
     );
     const encargo = enc.rows[0] ?? null;
-    const muro = await db.query(
+    const muroBase = await db.query<{ id: string; titulo: string; estado: string; actualizado: string }>(
       "SELECT id, titulo, estado, actualizado FROM encargos ORDER BY actualizado DESC LIMIT 12",
     );
+    const porEncargo = await consumoPorEncargo(db, muroBase.rows.map((e) => e.id));
+    const muro = { rows: muroBase.rows.map((e) => ({ ...e, consumo: porEncargo[e.id] ?? [] })) };
+    const biblioteca = await leerBiblioteca(db);
     if (!encargo)
-      return { base: "ok", ...VACIO, fichas: fichas.rows, muro: muro.rows as EstadoOficina["muro"], buzon, consumo: { encargo: [], total: consumoTotal }, ahora };
+      return { base: "ok", ...VACIO, fichas: fichas.rows, muro: muro.rows, biblioteca, buzon, consumo: { encargo: [], total: consumoTotal }, ahora };
 
     const version = await db.query<{ plan: { texto?: string } | null; equipo: { ficha_id: string; tarea: string }[] | null }>(
       "SELECT plan, equipo FROM encargo_versiones WHERE encargo_id = $1 AND version = $2",
@@ -213,7 +263,8 @@ export async function leerEstado(db: pg.Pool | null): Promise<EstadoOficina> {
       eventos: eventos.rows.reverse(),
       decisiones: decisiones.rows,
       resultados: resultados.rows,
-      muro: muro.rows as EstadoOficina["muro"],
+      muro: muro.rows,
+      biblioteca,
       buzon,
       consumo: { encargo: await leerConsumo(db, encargo.id), total: consumoTotal },
       ahora,

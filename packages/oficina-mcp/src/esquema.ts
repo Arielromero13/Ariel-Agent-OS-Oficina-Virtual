@@ -194,6 +194,15 @@ ALTER TABLE resultados ADD COLUMN IF NOT EXISTS tokens_salida INTEGER;
 ALTER TABLE resultados ADD COLUMN IF NOT EXISTS tokens_total INTEGER;
 `,
   },
+  {
+    nombre: "004_plantillas",
+    sql: `
+-- Plantillas de entregable (Word, Excel...) en la biblioteca, con su archivo en el almacén.
+ALTER TABLE biblioteca DROP CONSTRAINT IF EXISTS biblioteca_tipo_check;
+ALTER TABLE biblioteca ADD CONSTRAINT biblioteca_tipo_check CHECK (tipo IN ('ficha', 'script', 'aprendizaje', 'plantilla'));
+ALTER TABLE biblioteca ADD COLUMN IF NOT EXISTS archivo_id TEXT REFERENCES archivos(id);
+`,
+  },
 ];
 
 /**

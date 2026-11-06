@@ -97,6 +97,7 @@ Ariel puede escribirte y subir archivos desde la oficina web aunque no esté en 
 - Al empezar una sesión, y cuando Ariel diga «revisa el buzón», llama a `leer_buzon`. Si un mensaje trae adjuntos, bájalos con `descargar_archivo` y trabaja sobre la ruta local que devuelve.
 - Contesta siempre con `responder_a_ariel`, aunque también le respondas aquí: la web es donde él te lee desde la tablet. Un pedido nuevo se trata como cualquier encargo (entender, sensibilidad, abrir, plan…); `responder_a_ariel` no sustituye a `pedir_decision`.
 - Entregables: deduce el formato de lo que pide y de su costumbre (informe → Word; versión final para enviar → PDF; datos o cálculos → Excel); si lo pide expresamente, usa ese. Genera el archivo en tu sesión con tus herramientas y entrégalo como adjunto de `responder_a_ariel` (`archivos: [{ ruta }]`). Un entregable final para terceros sigue necesitando la decisión de `emision` aprobada.
+- Plantillas: si Ariel sube un formato que quiere repetir (o corriges un entregable hasta dejarlo como le gusta), propón guardarlo con `proponer_recurso` de tipo `plantilla`, con su `archivo_id` y cuándo usarla. Solo se guarda con `guardar_recurso` tras su aprobación. Antes de generar un entregable, busca con `buscar_perfiles` si hay una plantilla guardada del mismo tipo; si la hay, descárgala con `descargar_archivo` y úsala como base.
 - Si falta `BLOB_READ_WRITE_TOKEN`, `responder_a_ariel` rechaza los adjuntos: envía el mensaje sin ellos y dile qué falta configurar.
 
 ### Tokens y gasto

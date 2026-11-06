@@ -164,6 +164,20 @@ herramienta(
 );
 
 herramienta(
+  "proponer_recurso",
+  "Propone a Ariel guardar en la biblioteca una plantilla de entregable (con su archivo), un script, una ficha o un aprendizaje, sin cerrar el encargo. Crea la decisión de tipo recurso; guarda con guardar_recurso solo cuando esté aprobada.",
+  {
+    encargo_id: z.string(),
+    tipo: z.enum(["ficha", "script", "aprendizaje", "plantilla"]),
+    titulo: z.string().min(1),
+    resumen: z.string().min(1),
+    contenido: z.string().min(1).describe("Para una plantilla: cuándo usarla y cómo rellenarla."),
+    archivo_id: z.string().optional().describe("Obligatorio para plantillas: archivo del buzón o de un entregable."),
+  },
+  (a) => oficina.proponerRecurso(a),
+);
+
+herramienta(
   "leer_buzon",
   "Lee los mensajes de Ariel que llegaron desde la oficina web (con sus adjuntos) y los marca como leídos.",
   { marcar_leidos: z.boolean().optional().describe("Por defecto sí.") },

@@ -123,3 +123,20 @@ test("precios: cada modelo tiene fuente oficial y el costo se calcula sin invent
   // Todas las fichas usan modelos con precio conocido.
   for (const m of ["qwen-plus", "deepseek-flash"]) assert.ok(precioDe(m), m);
 });
+
+test("plantillas: se proponen con su archivo y solo se guardan con la aprobación de Ariel", async () => {
+  const db = await nuevaBase();
+  const oficina = new Oficina(db, { env: {} });
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "T", descripcion: "D", sensibilidad: "externo" });
+  await assert.rejects(
+    oficina.proponerRecurso({ encargo_id, tipo: "plantilla", titulo: "Informe PAT", resumen: "r", contenido: "c" }),
+    ReglaOficina,
+  );
+  await db.query("INSERT INTO archivos (id, origen, nombre, tipo, tamano, url) VALUES ('arc_p', 'ariel', 'plantilla.docx', 'x', 1, 'https://a/b')");
+  const r = await oficina.proponerRecurso({ encargo_id, tipo: "plantilla", titulo: "Informe PAT", resumen: "Formato de puesta a tierra", contenido: "Usar para PAT", archivo_id: "arc_p" });
+  await assert.rejects(oficina.guardarRecurso({ recurso_id: r.recurso_id, decision_id: r.decision_id }), ReglaOficina);
+  await responderDecision(db, { decision_id: r.decision_id, estado: "aprobada", via: "web" });
+  await oficina.guardarRecurso({ recurso_id: r.recurso_id, decision_id: r.decision_id });
+  const encontrados = await oficina.buscarPerfiles({ consulta: "PAT" });
+  assert.equal(encontrados.recursos[0].archivo_id, "arc_p");
+});

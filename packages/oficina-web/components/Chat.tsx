@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
-import type { Buzon, MensajeBuzon } from "@/lib/estado";
+import type { Archivo, Buzon, MensajeBuzon } from "@/lib/estado";
 import { MINUTOS_SESION } from "@/lib/escena";
 
 const hora = (iso: string) =>
@@ -64,6 +64,18 @@ export default function Chat({
     if (hilo.current) hilo.current.scrollTop = hilo.current.scrollHeight;
   }, [ultimo]);
 
+  const sinLeer = buzon.mensajes.filter((m) => m.autor === "ariel" && !m.leido_en).length;
+  const [copiado, setCopiado] = useState(false);
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText("Revisa el buzón de la oficina (leer_buzon) y atiende los mensajes nuevos.");
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setError("No se pudo copiar. Escribe en la sesión: «revisa el buzón».");
+    }
+  }
+
   const reciente =
     buzon.latido && (new Date(ahora).getTime() - new Date(buzon.latido).getTime()) / 60000 <= MINUTOS_SESION;
 
@@ -104,6 +116,11 @@ export default function Chat({
             Sin sesión abierta (último contacto: {antiguedad(buzon.latido, ahora)}). Tu mensaje queda en el buzón; ábrelo en Claude Code
             y dile «revisa el buzón».
           </>
+        )}
+        {sinLeer > 0 && !reciente && (
+          <button className="boton-secundario copiar" onClick={() => void copiar()}>
+            {copiado ? "Copiado ✓" : `Copiar «revisa el buzón» (${sinLeer} sin leer)`}
+          </button>
         )}
       </p>
 
@@ -174,6 +191,34 @@ export default function Chat({
   );
 }
 
+const VISTA_PREVIA = /\.(pdf|png|jpe?g|webp)$/i;
+
+function Adjunto({ a }: { a: Archivo }) {
+  const [abierto, setAbierto] = useState(false);
+  const url = `/api/archivos/${encodeURIComponent(a.id)}`;
+  const esImagen = /\.(png|jpe?g|webp)$/i.test(a.nombre);
+  return (
+    <li>
+      <a href={url} download={a.nombre}>
+        {icono(a.nombre)} {a.nombre}
+      </a>
+      <span className="detalle"> {tamano(a.tamano)}</span>
+      {VISTA_PREVIA.test(a.nombre) && (
+        <button className="boton-texto ver" onClick={() => setAbierto(!abierto)}>
+          {abierto ? "Ocultar" : "Ver"}
+        </button>
+      )}
+      {abierto &&
+        (esImagen ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="vista-previa" src={`${url}?ver=1`} alt={a.nombre} />
+        ) : (
+          <iframe className="vista-previa pdf" src={`${url}?ver=1`} title={a.nombre} />
+        ))}
+    </li>
+  );
+}
+
 function Burbuja({ m }: { m: MensajeBuzon }) {
   return (
     <article className={`burbuja ${m.autor}`}>
@@ -181,12 +226,7 @@ function Burbuja({ m }: { m: MensajeBuzon }) {
       {m.archivos.length > 0 && (
         <ul className="adjuntos">
           {m.archivos.map((a) => (
-            <li key={a.id}>
-              <a href={`/api/archivos/${encodeURIComponent(a.id)}`} download={a.nombre}>
-                {icono(a.nombre)} {a.nombre}
-              </a>
-              <span className="detalle"> {tamano(a.tamano)}</span>
-            </li>
+            <Adjunto key={a.id} a={a} />
           ))}
         </ul>
       )}

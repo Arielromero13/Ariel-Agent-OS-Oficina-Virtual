@@ -161,11 +161,27 @@ function Sobre({ x, y, n }: { x: number; y: number; n: number }) {
   );
 }
 
-function Personaje({ gx, gy, ropa, pelo, estado }: { gx: number; gy: number; ropa: string; pelo: string; estado: EstadoVisible }) {
+function Personaje({
+  gx,
+  gy,
+  ropa,
+  pelo,
+  estado,
+  destino,
+}: {
+  gx: number;
+  gy: number;
+  ropa: string;
+  pelo: string;
+  estado: EstadoVisible;
+  /** Si se indica, el personaje camina hasta esa casilla (entrega en la Mesa de revisión). */
+  destino?: { gx: number; gy: number };
+}) {
   const p = iso(gx, gy);
+  const q = destino ? iso(destino.gx, destino.gy) : p;
   const tenue = estado === "No configurado" || estado === "Sin sesión abierta";
   return (
-    <g transform={`translate(${p.x},${p.y})`} opacity={tenue ? 0.45 : 1}>
+    <g className="camina" style={{ transform: `translate(${q.x}px, ${q.y}px)` }} opacity={tenue ? 0.45 : 1}>
       <ellipse cx={0} cy={0} rx={11} ry={5} fill="rgba(15,23,42,0.12)" />
       <g className={ACTIVO.has(estado) ? "personaje activo" : "personaje"}>
         <rect x={-8} y={-26} width={16} height={24} rx={7} fill={ropa} />
@@ -329,7 +345,14 @@ export default function Escena({
             etiqueta={iso(p.gx + 0.8, p.gy + 2.1)}
           >
             <Escritorio gx={p.gx} gy={p.gy} encendido={estado === "Analizando"} />
-            <Personaje gx={p.gx + 0.8} gy={p.gy + 1.5} ropa={ROPA[i]} pelo={PELO[i]} estado={estado} />
+            <Personaje
+              gx={p.gx + 0.8}
+              gy={p.gy + 1.5}
+              ropa={ROPA[i]}
+              pelo={PELO[i]}
+              estado={estado}
+              destino={estados.entregando.includes(f.id) ? { gx: 7.2 + (i % 3) * 0.8, gy: 9.3 } : undefined}
+            />
           </Interactivo>
         );
       })}
