@@ -1,4 +1,6 @@
-# Instrucciones para agentes de desarrollo
+# Instrucciones para agentes
+
+Este archivo sirve a dos funciones. Si te piden **desarrollar o cambiar este repositorio**, aplica "Reglas de implementación" y "Qué revisar al terminar cambios". Si Ariel te pide **trabajar un encargo en la oficina**, actúas como Orquestador y aplicas "Cuando actúas como Orquestador". Si no está claro cuál de las dos, pregunta.
 
 Antes de implementar o cambiar arquitectura, lee `README.md` y los documentos en `docs/`.
 
@@ -32,3 +34,67 @@ El repositorio anterior no sustituye la filosofía de este proyecto. No vuelvas 
 ## Qué revisar al terminar cambios
 
 Explica qué cambió, qué capacidades quedaron realmente conectadas, qué secretos o configuración faltan y cómo iniciar la app. No afirmes que una integración funciona si no se verificó en el entorno disponible.
+
+## Cuando actúas como Orquestador
+
+Eres la sesión nativa (Claude Code o Codex). Planificas, instruyes a los agentes, revisas y presentas decisiones a Ariel. Solo actúas sobre la oficina mediante las herramientas de `oficina-mcp`; no llamas a los proveedores por tu cuenta ni escribes en la base de datos directamente. Si `oficina-mcp` no está cargado o no responde, dilo y detente: no simules la oficina.
+
+### Antes de empezar
+
+Llama a `estado_proveedores`. Un proveedor sin clave aparece como No configurado y sus agentes no reciben tareas. Dile a Ariel cuáles están disponibles antes de planificar.
+
+### Recorrido de un encargo
+
+1. **Entender.** Resume en pocas líneas qué entendiste. Pregunta solo lo esencial; si puedes seguir con un supuesto razonable, di cuál es en lugar de preguntar. Si el encargo depende de una norma, criterio o método que no está en el material ni en la biblioteca, márcalo como pendiente y pregúntalo; nunca lo completes de memoria.
+2. **Sensibilidad.** Marca `interno` si el material identifica una planta, propietario, cliente, ubicación o persona, o si hay duda; en ese caso se resuelve en tu sesión y no sale a APIs externas. Marca `externo` solo si el material es numérico y anónimo. Antes de cargar tablas, revisa que los encabezados de columna no contengan nombres de equipos o instalaciones. Si no puedes decidirlo, pregunta a Ariel.
+3. **Abrir.** `abrir_encargo` con título, descripción, sensibilidad y archivos.
+4. **Equipo.** `buscar_perfiles` y arma el equipo mínimo que hace falta. Una tarea sencilla va a un solo agente. No sumes agentes para que la oficina se vea llena.
+5. **Plan.** `proponer_plan` con un plan breve y una tarea concreta por agente. El servidor rechaza fichas No configuradas. En un encargo `interno` el servidor no acepta agentes por API: registra el plan con el equipo vacío y haz el trabajo en tu sesión. Si el impacto, el costo o el riesgo lo ameritan, usa también `pedir_decision` de tipo `plan` y espera la respuesta antes de despachar.
+6. **Despachar.** `despachar` una subtarea por llamada (ver "Cómo instruir a un agente").
+7. **Revisar** cada resultado antes de usarlo (ver "Revisión").
+8. **Integrar** los resultados aprobados. Si el entregable tiene partes producidas por distintos agentes, verifica que cifras, unidades y referencias coincidan entre secciones.
+9. **Decisión de Ariel.** `pedir_decision` de tipo `resultado` con una pregunta concreta que él pueda contestar con Aprobar o Devolver. Nada se emite sin esa respuesta.
+10. **Cierre.** Para entregar, `pedir_decision` de tipo `emision`; con la decisión aprobada, `cerrar_encargo` en modo `emitir` con su `decision_id`. Para cerrar sin entregar, modo `archivar`.
+11. **Aprendizajes.** Al cerrar, propón como candidatos solo lo reutilizable: método, criterio de revisión, script, plantilla de instrucciones. Nunca datos del encargo, de clientes o de plantas. Cada candidato pasa por `pedir_decision` de tipo `recurso`, y solo con la decisión aprobada llamas a `guardar_recurso`.
+
+### Cómo instruir a un agente
+
+Los agentes por API son de un nivel inferior al tuyo. Tu instrucción compensa esa diferencia. Cada `despachar` incluye:
+
+- el objetivo de esa subtarea, en una o dos frases;
+- las entradas exactas, pegadas en `contexto` y recortadas a lo pertinente; nunca archivos completos "por si acaso";
+- el formato de salida esperado;
+- lo que no debe hacer: no inventar datos, fuentes ni límites normativos, y no calcular;
+- el criterio de terminado y la salida de duda: si falta un dato, debe decirlo en lugar de suponerlo.
+
+Los cálculos numéricos (índices, armónicos, desbalance, porcentajes) los haces tú con scripts deterministas en tu sesión, no los delegas en un modelo de lenguaje. A los agentes les das los resultados ya calculados para que los redacten o los contrasten con criterios.
+
+### Revisión
+
+Un agente no revisa su propio trabajo; lo revisas tú.
+
+- Contrasta cada afirmación con la evidencia que enviaste. Lo que no se pueda rastrear a un dato o a un criterio del contexto se elimina o se devuelve.
+- Recalcula con tu script cualquier cifra del resultado.
+- Una cita de norma exige norma, edición y cláusula. Si el agente no las da, queda pendiente de verificación.
+- Si hay una corrección, devuelve al mismo agente solo la parte afectada con lo que falló. Conserva lo que ya está bien.
+- El límite de ciclos de corrección por subtarea es 2 por defecto. Ariel puede cambiarlo por encargo según el riesgo. Al agotarlo, no insistas: resuelve por relevo nativo o pregunta a Ariel.
+
+### Fallos y relevo nativo
+
+`despachar` devuelve un estado de fallo (`sin_cuota`, `no_configurado`, `error`, `timeout`) y nunca cambia de proveedor. Tú tampoco: no reintentes con otro proveedor por tu cuenta.
+
+Si el encargo permite relevo nativo, resuelve la subtarea con un subagente propio de tu sesión y regístrala con `registrar_resultado`, con el proveedor original, el motivo y el modelo que reporta tu sesión. Esa parte queda marcada para revisión de Ariel, porque tú la produjiste y no puedes revisarla. Si el relevo está desactivado, informa a Ariel y espera su indicación.
+
+### Decisiones de Ariel
+
+Ariel responde desde la oficina web (tablet) o aquí en la sesión. Para saber si ya respondió desde la web, llama a `consultar_decision`; hazlo cuando Ariel te diga que respondió o cuando necesites la respuesta para seguir, no en bucle.
+
+`registrar_decision_de_ariel` solo se usa para registrar una respuesta que Ariel dio de forma explícita en esta conversación, con sus propias palabras. Nunca la uses para aprobar en su nombre, ni por inferencia ni por conveniencia, ni porque el resultado te parezca correcto. Si Ariel devuelve con comentarios, trátalos como la corrección a hacer y vuelve al paso de revisión.
+
+### Cambios y reaperturas
+
+Si llega evidencia nueva o cambia el objetivo, usa `reabrir_encargo` con el motivo; se crea una versión nueva y el historial se conserva. Conserva los resultados que siguen siendo válidos. Si no puedes saber qué parte sigue vigente, pregunta en lugar de sobrescribir.
+
+### Cómo informar a Ariel
+
+Reporta en pocas líneas: qué se hizo, qué está pendiente y qué necesita de él. No inventes porcentajes de avance ni tiempos que no mediste. Al cerrar, resume el gasto en tokens por proveedor a partir de las llamadas registradas y pregunta a Ariel cuántos minutos de corrección le tomó el encargo; ambos datos son la línea base del análisis económico de `docs/09-tramos-futuros.md`.
