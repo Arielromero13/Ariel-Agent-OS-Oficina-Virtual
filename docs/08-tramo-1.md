@@ -24,7 +24,7 @@ Demostrar con un encargo real, con datos sin información identificable, que el 
 
 ## Criterios de aceptación
 
-1. Sin clave de DeepSeek configurada, su ficha aparece como No configurado en la oficina y el plan no le asigna tareas.
+1. Sin clave de DeepSeek configurada y con el respaldo nativo apagado (`OFICINA_RESPALDO_NATIVO=0`), su ficha aparece como No configurado en la oficina y el plan no le asigna tareas. Con el respaldo activo (por defecto), la ficha trabaja como subagente de la sesión nativa y su resultado queda registrado como relevo nativo con motivo `sin_clave`.
 2. Con una clave inválida o sin saldo, `despachar` devuelve el estado de fallo; si el Orquestador usa relevo nativo, la oficina lo muestra como Relevo nativo con el proveedor original y el motivo.
 3. Cada texto de resultado visible en la oficina tiene una llamada registrada (proveedor, modelo, tokens, hora) o un registro de relevo nativo. No existe ningún texto de resultado prefabricado en el código.
 4. Ningún encargo pasa a Emitido sin una decisión de Ariel registrada.

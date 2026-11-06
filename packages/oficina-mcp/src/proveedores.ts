@@ -33,6 +33,25 @@ export function claveDe(proveedor: string, env: NodeJS.ProcessEnv = process.env)
   return clave && clave.trim() !== "" ? clave : undefined;
 }
 
+/**
+ * Respaldo nativo por falta de clave: si un proveedor no tiene clave, sus fichas se ejecutan como
+ * subagentes de la sesión nativa (Claude en Claude Code, o el agente de Codex). oficina-mcp no
+ * llama a ningún modelo en ese caso: solo prepara la instrucción y el Orquestador la ejecuta con
+ * las herramientas oficiales de su sesión. Activo por defecto; OFICINA_RESPALDO_NATIVO=0 lo apaga.
+ * Solo cubre la falta de clave: un fallo con clave (sin_cuota, error, timeout) sigue devolviendo el estado.
+ */
+export function respaldoNativoActivo(env: NodeJS.ProcessEnv = process.env): boolean {
+  return (env.OFICINA_RESPALDO_NATIVO ?? "1").trim() !== "0";
+}
+
+/** Cómo se ejecuta una ficha de ese proveedor: por API, como subagente de la sesión nativa, o no se puede. */
+export type Ejecucion = "api" | "sesion_nativa" | "no_configurado";
+
+export function ejecucionDe(proveedor: string, env: NodeJS.ProcessEnv = process.env): Ejecucion {
+  if (claveDe(proveedor, env)) return "api";
+  return respaldoNativoActivo(env) ? "sesion_nativa" : "no_configurado";
+}
+
 export interface Mensaje {
   role: "system" | "user";
   content: string;

@@ -65,7 +65,7 @@ herramienta(
 
 herramienta(
   "proponer_plan",
-  "Registra el plan y el equipo del encargo. Rechaza fichas cuyo proveedor esté No configurado.",
+  "Registra el plan y el equipo del encargo. Rechaza fichas cuyo proveedor esté No configurado. Una ficha sin clave con respaldo nativo activo se acepta y se ejecuta como subagente de la sesión.",
   {
     encargo_id: z.string(),
     plan: z.string().min(1),
@@ -76,14 +76,14 @@ herramienta(
 
 herramienta(
   "despachar",
-  "Envía una subtarea a un agente por API. Devuelve el resultado o el estado de fallo (sin_cuota, no_configurado, error, timeout). Nunca cambia de proveedor.",
+  "Envía una subtarea a un agente por API. Devuelve el resultado o el estado de fallo (sin_cuota, no_configurado, error, timeout). Nunca cambia de proveedor. Si el proveedor de la ficha no tiene clave y el respaldo nativo está activo, no llama a ningún modelo: devuelve estado resolver_en_sesion con las instrucciones para un subagente de tu sesión.",
   { encargo_id: z.string(), ficha_id: z.string(), instrucciones: z.string().min(1), contexto: z.string().optional() },
   (a) => oficina.despachar(a),
 );
 
 herramienta(
   "registrar_resultado",
-  "Registra un resultado de relevo nativo (subagente de la sesión) tras un fallo de proveedor. Queda marcado para revisión de Ariel.",
+  "Registra un resultado de relevo nativo (subagente de la sesión) tras un fallo de proveedor o un despacho resolver_en_sesion (motivo sin_clave). Queda marcado para revisión de Ariel.",
   {
     encargo_id: z.string(),
     ficha_id: z.string(),
@@ -146,7 +146,7 @@ herramienta(
 
 herramienta(
   "estado_proveedores",
-  "Indica qué proveedores por API tienen clave configurada.",
+  "Indica qué proveedores por API tienen clave configurada y cómo se ejecutan sus fichas (api, sesion_nativa por respaldo sin clave, o no_configurado).",
   {},
   () => oficina.estadoProveedores(),
 );

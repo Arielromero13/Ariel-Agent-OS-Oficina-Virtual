@@ -56,7 +56,9 @@ export async function leerEstado(db: pg.Pool | null): Promise<EstadoOficina> {
     if (!existe.rows[0]?.t) return { base: "sin_migrar", ...VACIO };
 
     const fichas = await db.query<FichaVista>(
-      `SELECT f.id, f.nombre, f.especialidad, f.proveedor, f.modelo, COALESCE(p.configurado, FALSE) AS configurado
+      `SELECT f.id, f.nombre, f.especialidad, f.proveedor, f.modelo, COALESCE(p.configurado, FALSE) AS configurado,
+              -- to_jsonb tolera una base aún sin la migración 002 (columna ausente = sin respaldo).
+              COALESCE((to_jsonb(p) ->> 'respaldo_nativo')::boolean, FALSE) AS respaldo_nativo
        FROM fichas f LEFT JOIN proveedores p ON p.id = f.proveedor WHERE f.activa ORDER BY f.id`,
     );
     // Encargo activo: el más reciente sin cerrar; si no hay, el último que se tocó.

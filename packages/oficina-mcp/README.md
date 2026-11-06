@@ -5,7 +5,7 @@ Servidor MCP (stdio) por el que el Orquestador nativo actúa sobre la oficina. D
 ## Puesta en marcha
 
 1. `npm install` en la raíz del repositorio.
-2. Define `DATABASE_URL` y, si los tienes, `QWEN_API_KEY` y `DEEPSEEK_API_KEY` (ver `.env.example`).
+2. Define `DATABASE_URL` y, si los tienes, `QWEN_API_KEY` y `DEEPSEEK_API_KEY` (ver `.env.example`). Si falta una clave, las fichas de ese proveedor trabajan como subagentes de la sesión nativa (respaldo nativo, `OFICINA_RESPALDO_NATIVO=0` lo apaga).
 3. `npm run migrar -w oficina-mcp` crea las tablas, sincroniza las fichas de `fichas/` y publica qué proveedores están configurados.
 4. Claude Code carga el servidor desde `.mcp.json` al abrir el repositorio. En Codex se declara en `~/.codex/config.toml` con el mismo comando: `npx tsx packages/oficina-mcp/src/index.ts`.
 
