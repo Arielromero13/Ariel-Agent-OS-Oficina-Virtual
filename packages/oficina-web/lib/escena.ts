@@ -32,6 +32,8 @@ export interface FichaVista {
   proveedor: string;
   modelo: string;
   configurado: boolean;
+  /** Sin clave, pero cubierta por subagentes de la sesión nativa. */
+  respaldo_nativo: boolean;
 }
 
 export interface EncargoVista {
@@ -57,7 +59,7 @@ export function derivarEscena(
   decisionesPendientes: number,
 ): EstadosEscena {
   const agentes: Record<string, EstadoVisible> = {};
-  for (const f of fichas) agentes[f.id] = f.configurado ? "En reposo" : "No configurado";
+  for (const f of fichas) agentes[f.id] = f.configurado || f.respaldo_nativo ? "En reposo" : "No configurado";
 
   if (!encargo) {
     return { orquestador: "En reposo", rrhh: "En reposo", agentes, carpetasEnRevision: 0 };
@@ -125,8 +127,13 @@ export function describirEvento(e: Evento, nombres: Record<string, string>): str
     case "agente_convocado":
       return `${n(e.datos.ficha_id)} convocado: ${e.datos.tarea ?? ""}`;
     case "agente_trabajando":
-      return `${n(e.actor)} trabajando con ${e.datos.proveedor} (${e.datos.modelo})`;
+      return e.datos.ejecucion === "sesion_nativa"
+        ? `${n(e.actor)} trabajando como subagente de la sesión nativa (sin clave de ${e.datos.proveedor_original})`
+        : `${n(e.actor)} trabajando con ${e.datos.proveedor} (${e.datos.modelo})`;
     case "resultado_entregado":
+      if (e.datos.origen === "relevo_nativo" && e.datos.motivo === "sin_clave") {
+        return `${n(e.actor)}: resultado del subagente de la sesión nativa (sin clave de ${e.datos.proveedor_original}). Revisión para Ariel.`;
+      }
       return e.datos.origen === "relevo_nativo"
         ? `${n(e.actor)}: resultado por relevo nativo (${e.datos.proveedor_original}, ${e.datos.motivo}). Revisión para Ariel.`
         : `${n(e.actor)} entregó su resultado`;

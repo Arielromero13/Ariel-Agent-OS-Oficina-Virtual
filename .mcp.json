@@ -6,7 +6,8 @@
       "env": {
         "DATABASE_URL": "${DATABASE_URL}",
         "QWEN_API_KEY": "${QWEN_API_KEY:-}",
-        "DEEPSEEK_API_KEY": "${DEEPSEEK_API_KEY:-}"
+        "DEEPSEEK_API_KEY": "${DEEPSEEK_API_KEY:-}",
+        "OFICINA_RESPALDO_NATIVO": "${OFICINA_RESPALDO_NATIVO:-1}"
       }
     }
   }

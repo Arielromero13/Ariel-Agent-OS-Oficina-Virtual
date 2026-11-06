@@ -20,6 +20,7 @@ El repositorio anterior no sustituye la filosofía de este proyecto. No vuelvas 
 - El Orquestador es la sesión nativa (Claude Code o Codex). No escribas lógica de orquestación en la app; el Orquestador actúa solo mediante `oficina-mcp`.
 - No extraigas ni reutilices tokens de sesión de Claude Code o Codex. Las suscripciones se usan solo a través de sus herramientas oficiales.
 - Ante un fallo de proveedor, `oficina-mcp` devuelve el estado; nunca cambia de proveedor por su cuenta. El relevo nativo se registra como tal.
+- La única excepción declarada es el respaldo nativo por falta de clave (`OFICINA_RESPALDO_NATIVO`, activo por defecto): las fichas de un proveedor sin clave se ejecutan como subagentes de la sesión nativa. `oficina-mcp` no llama a ningún modelo en ese caso; lo hace el Orquestador con sus herramientas oficiales. Ver `docs/03-model-routing.md`.
 - Cada animación o cambio de la escena corresponde a un evento registrado en el estado compartido.
 - No muestres porcentajes de avance, latencias ni métricas que el sistema no mida.
 - Mantén los agentes inactivos cuando no trabajan. Guarda perfiles y recursos fuera del contexto activo, y recupera solo lo relevante para el encargo actual.
@@ -41,7 +42,7 @@ Eres la sesión nativa (Claude Code o Codex). Planificas, instruyes a los agente
 
 ### Antes de empezar
 
-Llama a `estado_proveedores`. Un proveedor sin clave aparece como No configurado y sus agentes no reciben tareas. Dile a Ariel cuáles están disponibles antes de planificar.
+Llama a `estado_proveedores`. Cada proveedor indica su `ejecucion`: `api` (tiene clave), `sesion_nativa` (sin clave, sus fichas trabajan como subagentes de tu sesión) o `no_configurado` (sin clave y con el respaldo apagado; sus agentes no reciben tareas). Dile a Ariel cuáles van por API y cuáles por tu sesión antes de planificar.
 
 ### Recorrido de un encargo
 
@@ -49,7 +50,7 @@ Llama a `estado_proveedores`. Un proveedor sin clave aparece como No configurado
 2. **Sensibilidad.** Marca `interno` si el material identifica una planta, propietario, cliente, ubicación o persona, o si hay duda; en ese caso se resuelve en tu sesión y no sale a APIs externas. Marca `externo` solo si el material es numérico y anónimo. Antes de cargar tablas, revisa que los encabezados de columna no contengan nombres de equipos o instalaciones. Si no puedes decidirlo, pregunta a Ariel.
 3. **Abrir.** `abrir_encargo` con título, descripción, sensibilidad y archivos.
 4. **Equipo.** `buscar_perfiles` y arma el equipo mínimo que hace falta. Una tarea sencilla va a un solo agente. No sumes agentes para que la oficina se vea llena.
-5. **Plan.** `proponer_plan` con un plan breve y una tarea concreta por agente. El servidor rechaza fichas No configuradas. En un encargo `interno` el servidor no acepta agentes por API: registra el plan con el equipo vacío y haz el trabajo en tu sesión. Si el impacto, el costo o el riesgo lo ameritan, usa también `pedir_decision` de tipo `plan` y espera la respuesta antes de despachar.
+5. **Plan.** `proponer_plan` con un plan breve y una tarea concreta por agente. El servidor rechaza fichas No configuradas. En un encargo `interno` el servidor no acepta agentes por API, pero sí fichas en `sesion_nativa`; si no hay ninguna, registra el plan con el equipo vacío y haz el trabajo en tu sesión. Si el impacto, el costo o el riesgo lo ameritan, usa también `pedir_decision` de tipo `plan` y espera la respuesta antes de despachar.
 6. **Despachar.** `despachar` una subtarea por llamada (ver "Cómo instruir a un agente").
 7. **Revisar** cada resultado antes de usarlo (ver "Revisión").
 8. **Integrar** los resultados aprobados. Si el entregable tiene partes producidas por distintos agentes, verifica que cifras, unidades y referencias coincidan entre secciones.
@@ -78,6 +79,10 @@ Un agente no revisa su propio trabajo; lo revisas tú.
 - Una cita de norma exige norma, edición y cláusula. Si el agente no las da, queda pendiente de verificación.
 - Si hay una corrección, devuelve al mismo agente solo la parte afectada con lo que falló. Conserva lo que ya está bien.
 - El límite de ciclos de corrección por subtarea es 2 por defecto. Ariel puede cambiarlo por encargo según el riesgo. Al agotarlo, no insistas: resuelve por relevo nativo o pregunta a Ariel.
+
+### Respaldo nativo por falta de clave
+
+Si `despachar` devuelve `resolver_en_sesion`, el proveedor de esa ficha no tiene clave y la subtarea la resuelve un subagente de tu sesión (en Claude Code, la herramienta de subagentes). Dale al subagente exactamente `subagente.instrucciones_de_sistema` como rol y `subagente.tarea` como encargo, sin añadir contexto propio ni archivos extra. Registra su respuesta tal cual con `registrar_resultado`: `proveedor_original` y `motivo: sin_clave` como los devuelve `despachar`, y `modelo_nativo` el que reporte tu sesión. Después la revisas como cualquier otro resultado; queda además marcada para revisión de Ariel. Si no puedes lanzar subagentes en tu sesión, dilo y pregunta a Ariel; no escribas tú el resultado como si fuera del subagente.
 
 ### Fallos y relevo nativo
 

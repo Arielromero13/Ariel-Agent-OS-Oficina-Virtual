@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import type { Db } from "./db.js";
 import { RAIZ_REPO } from "./db.js";
-import { PROVEEDORES, claveDe, llamarProveedor, type Fetch, type Mensaje } from "./proveedores.js";
+import { PROVEEDORES, claveDe, ejecucionDe, llamarProveedor, respaldoNativoActivo, type Fetch, type Mensaje } from "./proveedores.js";
 import { ReglaOficina, registrarEvento, responderDecision } from "./decisiones.js";
 import { sincronizarFichasEn, type Ficha } from "./esquema.js";
 
@@ -69,17 +69,30 @@ export class Oficina {
     return sincronizarFichasEn(this.db, fichas);
   }
 
-  /** Publica qué proveedores tienen clave configurada. Nunca publica la clave. */
+  /**
+   * Publica qué proveedores tienen clave configurada y cómo se ejecutan sus fichas
+   * ('api', 'sesion_nativa' por respaldo sin clave, o 'no_configurado'). Nunca publica la clave.
+   */
   async reportarProveedores() {
-    const estado = Object.keys(PROVEEDORES).map((id) => ({ id, configurado: claveDe(id, this.env) !== undefined }));
+    const estado = Object.keys(PROVEEDORES).map((id) => ({
+      id,
+      configurado: claveDe(id, this.env) !== undefined,
+      ejecucion: ejecucionDe(id, this.env),
+    }));
     for (const p of estado) {
+      const respaldo = p.ejecucion === "sesion_nativa";
       await this.db.query(
-        `INSERT INTO proveedores (id, configurado) VALUES ($1, $2)
-         ON CONFLICT (id) DO UPDATE SET configurado = $2, actualizado = now()`,
-        [p.id, p.configurado],
+        `INSERT INTO proveedores (id, configurado, respaldo_nativo) VALUES ($1, $2, $3)
+         ON CONFLICT (id) DO UPDATE SET configurado = $2, respaldo_nativo = $3, actualizado = now()`,
+        [p.id, p.configurado, respaldo],
       );
     }
-    return estado;
+    return {
+      proveedores: estado,
+      respaldo_nativo: respaldoNativoActivo(this.env)
+        ? "Activo: las fichas de un proveedor sin clave se ejecutan como subagentes de tu sesión nativa."
+        : "Desactivado (OFICINA_RESPALDO_NATIVO=0): un proveedor sin clave queda No configurado.",
+    };
   }
 
   // ---------- Herramientas ----------
@@ -128,25 +141,38 @@ export class Oficina {
     );
     await this.evento(a.encargo_id ?? null, "rrhh_busqueda", "rrhh", { consulta: a.consulta ?? "", fichas: fichas.rows.length });
     return {
-      fichas: fichas.rows.map((f) => ({ ...f, proveedor_configurado: claveDe(f.proveedor, this.env) !== undefined })),
+      fichas: fichas.rows.map((f) => ({
+        ...f,
+        proveedor_configurado: claveDe(f.proveedor, this.env) !== undefined,
+        ejecucion: ejecucionDe(f.proveedor, this.env),
+      })),
       recursos: recursos.rows,
     };
   }
 
   async proponerPlan(a: { encargo_id: string; plan: string; equipo: { ficha_id: string; tarea: string }[] }) {
     const enc = await this.encargo(a.encargo_id);
+    const ejecuciones: Record<string, string> = {};
     for (const miembro of a.equipo) {
       const ficha = await this.ficha(miembro.ficha_id);
-      if (!claveDe(ficha.proveedor, this.env)) {
+      const ejecucion = ejecucionDe(ficha.proveedor, this.env);
+      if (ejecucion === "no_configurado") {
         throw new ReglaOficina(
           `La ficha ${ficha.id} usa ${ficha.proveedor}, que está No configurado. No se le pueden asignar tareas.`,
         );
       }
-      if (enc.sensibilidad === "interno") {
+      if (ejecucion === "sesion_nativa" && !enc.relevo_nativo) {
+        throw new ReglaOficina(
+          `La ficha ${ficha.id} no tiene clave de ${ficha.proveedor} y solo podría ejecutarse en la sesión nativa, pero el relevo nativo está desactivado para el encargo ${enc.id}.`,
+        );
+      }
+      // Un subagente de la sesión nativa no sale a APIs externas, así que sí puede trabajar un encargo interno.
+      if (ejecucion === "api" && enc.sensibilidad === "interno") {
         throw new ReglaOficina(
           `El encargo ${enc.id} es interno: no se envía a APIs externas. Resuélvelo en la sesión nativa.`,
         );
       }
+      ejecuciones[ficha.id] = ejecucion;
     }
     await this.db.query(
       "UPDATE encargo_versiones SET plan = $3, equipo = $4 WHERE encargo_id = $1 AND version = $2",
@@ -155,21 +181,52 @@ export class Oficina {
     await this.cambiarEstado(enc.id, "en_curso");
     await this.evento(enc.id, "plan_propuesto", "orquestador", { equipo: a.equipo });
     for (const miembro of a.equipo) {
-      await this.evento(enc.id, "agente_convocado", "rrhh", { ficha_id: miembro.ficha_id, tarea: miembro.tarea });
+      await this.evento(enc.id, "agente_convocado", "rrhh", {
+        ficha_id: miembro.ficha_id,
+        tarea: miembro.tarea,
+        ejecucion: ejecuciones[miembro.ficha_id],
+      });
     }
     return { encargo_id: enc.id, version: enc.version_actual, equipo: a.equipo.length };
   }
 
   async despachar(a: { encargo_id: string; ficha_id: string; instrucciones: string; contexto?: string }) {
     const enc = await this.encargo(a.encargo_id);
-    if (enc.sensibilidad === "interno") {
+    const ficha = await this.ficha(a.ficha_id);
+    const ejecucion = ejecucionDe(ficha.proveedor, this.env);
+    if (ejecucion !== "sesion_nativa" && enc.sensibilidad === "interno") {
       throw new ReglaOficina(`El encargo ${enc.id} es interno: no se envía a APIs externas.`);
     }
-    const ficha = await this.ficha(a.ficha_id);
     const mensajes: Mensaje[] = [
       { role: "system", content: ficha.instrucciones },
       { role: "user", content: a.contexto ? `${a.instrucciones}\n\n---\nContexto:\n${a.contexto}` : a.instrucciones },
     ];
+
+    if (ejecucion === "sesion_nativa") {
+      if (!enc.relevo_nativo) {
+        throw new ReglaOficina(
+          `La ficha ${ficha.id} no tiene clave de ${ficha.proveedor} y el relevo nativo está desactivado para el encargo ${enc.id}. Informa a Ariel.`,
+        );
+      }
+      // No se llama a ningún modelo aquí: el Orquestador ejecuta la subtarea con un subagente de su sesión.
+      await this.evento(enc.id, "agente_trabajando", ficha.id, {
+        ejecucion: "sesion_nativa",
+        proveedor: "sesión nativa",
+        modelo: "subagente",
+        proveedor_original: ficha.proveedor,
+      });
+      return {
+        estado: "resolver_en_sesion",
+        ficha_id: ficha.id,
+        proveedor_original: ficha.proveedor,
+        motivo: "sin_clave",
+        subagente: { instrucciones_de_sistema: mensajes[0].content, tarea: mensajes[1].content },
+        accion:
+          `No hay clave de ${ficha.proveedor}. Lanza un subagente de tu sesión con estas instrucciones de sistema y esta tarea, ` +
+          `sin añadir contexto propio, y registra su respuesta tal cual con registrar_resultado ` +
+          `(ficha_id ${ficha.id}, proveedor_original ${ficha.proveedor}, motivo sin_clave, modelo_nativo el que reporte tu sesión).`,
+      };
+    }
     await this.evento(enc.id, "agente_trabajando", ficha.id, { proveedor: ficha.proveedor, modelo: ficha.modelo });
 
     const inicio = new Date();

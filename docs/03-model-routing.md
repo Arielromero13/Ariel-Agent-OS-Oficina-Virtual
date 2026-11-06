@@ -35,6 +35,17 @@ El Orquestador puede entonces ejecutar la subtarea con un subagente propio de la
 
 El relevo nativo está permitido por defecto porque mantiene los datos en el proveedor que ya atiende el encargo. Puede desactivarse por encargo.
 
+## Respaldo nativo por falta de clave
+
+Si un proveedor no tiene clave configurada, sus fichas no quedan inactivas: se ejecutan como subagentes de la sesión nativa (Claude en Claude Code; el agente de Codex si el Orquestador es Codex). Es una configuración declarada, no un cambio de proveedor ante un fallo:
+
+- Está activo por defecto. `OFICINA_RESPALDO_NATIVO=0` en el entorno de `oficina-mcp` lo apaga y el proveedor sin clave vuelve a quedar No configurado.
+- Solo cubre la falta de clave. Con clave, un fallo (`sin_cuota`, `error`, `timeout`) sigue devolviendo el estado como antes.
+- `oficina-mcp` no llama a ningún modelo: `despachar` devuelve `resolver_en_sesion` con las instrucciones de la ficha y la tarea. El Orquestador lanza el subagente con las herramientas oficiales de su sesión y registra la respuesta con `registrar_resultado` (motivo `sin_clave`). No se usan tokens de sesión fuera de esas herramientas.
+- Respeta la marca del encargo: si el relevo nativo está desactivado, la ficha sin clave no se acepta en el plan.
+- Como el subagente no sale de la sesión nativa, puede trabajar en un encargo `interno`; las fichas por API siguen excluidas de esos encargos.
+- El resultado queda registrado como relevo nativo y marcado para revisión de Ariel.
+
 ## Reparto de trabajo
 
 - Cálculos numéricos: scripts deterministas, nunca un modelo de lenguaje.
@@ -44,7 +55,7 @@ El relevo nativo está permitido por defecto porque mantiene los datos en el pro
 
 ## Fallos y configuración
 
-- Un proveedor sin clave aparece como No configurado y el Orquestador no le asigna tareas.
+- Un proveedor sin clave se cubre con respaldo nativo (ver arriba). Solo con el respaldo apagado aparece como No configurado y el Orquestador no le asigna tareas.
 - Un error, límite de cuota o timeout aparece como tal, con la acción necesaria.
 - Ningún texto de resultado se genera sin una llamada real detrás. No existen textos de respaldo prefabricados.
 - Un modo demostración, si existe, se identifica permanentemente como Demo y usa datos ficticios.

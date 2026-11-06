@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { derivarEscena, describirEvento } from "@/lib/escena";
+import { derivarEscena, describirEvento, type FichaVista } from "@/lib/escena";
 import type { Decision, EstadoOficina, Resultado } from "@/lib/estado";
 import Escena, { type Seleccion } from "./Escena";
 
@@ -164,10 +164,13 @@ function Panel({
     const vigente = fallo && ["Bloqueado", "Error"].includes(estadosEscena.agentes[f.id]);
     return (
       <>
-        <CabeceraPanel titulo={f.nombre} chip={`${f.proveedor} · ${f.modelo}`} estado={estadosEscena.agentes[f.id]} />
+        <CabeceraPanel titulo={f.nombre} chip={modoFicha(f)} estado={estadosEscena.agentes[f.id]} />
         <Bloque titulo="Ficha">
           <p>{f.especialidad}</p>
-          {!f.configurado && <p className="aviso">Proveedor No configurado: el plan no le asigna tareas.</p>}
+          {!f.configurado && f.respaldo_nativo && (
+            <p className="aviso">Sin clave de {f.proveedor}: trabaja como subagente de la sesión nativa y su resultado queda para revisión de Ariel.</p>
+          )}
+          {!f.configurado && !f.respaldo_nativo && <p className="aviso">Proveedor No configurado: el plan no le asigna tareas.</p>}
           {vigente && (
             <p className="aviso">
               Último fallo ({hora(fallo.creado)}): {String(fallo.datos.estado)}
@@ -193,7 +196,7 @@ function Panel({
               <li key={f.id}>
                 <strong>{f.nombre}</strong>
                 <span className="detalle">
-                  {f.proveedor} · {f.modelo} · {f.configurado ? "Configurado" : "No configurado"}
+                  {modoFicha(f)} · {f.configurado ? "Configurado" : f.respaldo_nativo ? "Respaldo nativo" : "No configurado"}
                 </span>
               </li>
             ))}
@@ -282,6 +285,10 @@ function Panel({
       </Bloque>
     </>
   );
+}
+
+function modoFicha(f: FichaVista) {
+  return f.configurado || !f.respaldo_nativo ? `${f.proveedor} · ${f.modelo}` : "Sesión nativa · subagente";
 }
 
 function CabeceraPanel({ titulo, chip, estado }: { titulo: string; chip?: string; estado?: string }) {
