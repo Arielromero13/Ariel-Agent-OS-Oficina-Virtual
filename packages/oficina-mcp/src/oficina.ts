@@ -4,9 +4,9 @@ import { join } from "node:path";
 import type { Db } from "./db.js";
 import { RAIZ_REPO } from "./db.js";
 import { PROVEEDORES, claveDe, llamarProveedor, type Fetch, type Mensaje } from "./proveedores.js";
+import { ReglaOficina, registrarEvento, responderDecision } from "./decisiones.js";
 
-/** Error de regla de negocio: se devuelve al Orquestador como mensaje, no como fallo del servidor. */
-export class ReglaOficina extends Error {}
+export { ReglaOficina };
 
 const nuevoId = (prefijo: string) => `${prefijo}_${randomUUID().slice(0, 8)}`;
 
@@ -45,12 +45,7 @@ export class Oficina {
   }
 
   private async evento(encargoId: string | null, tipo: string, actor: string, datos: object = {}) {
-    await this.db.query("INSERT INTO eventos (encargo_id, tipo, actor, datos) VALUES ($1, $2, $3, $4)", [
-      encargoId,
-      tipo,
-      actor,
-      JSON.stringify(datos),
-    ]);
+    await registrarEvento(this.db, encargoId, tipo, actor, datos);
   }
 
   private async encargo(id: string): Promise<Encargo> {
@@ -288,28 +283,8 @@ export class Oficina {
     return rows[0];
   }
 
-  /**
-   * Registra la respuesta de Ariel. La usa la oficina web (via 'web') y el Orquestador
-   * cuando Ariel responde en la sesión (via 'orquestador'). Solo Ariel decide.
-   */
   async responderDecision(a: { decision_id: string; estado: "aprobada" | "devuelta"; comentario?: string; via: "web" | "orquestador" }) {
-    const { rows } = await this.db.query<{ encargo_id: string; estado: string }>(
-      "SELECT encargo_id, estado FROM decisiones WHERE id = $1",
-      [a.decision_id],
-    );
-    const d = rows[0];
-    if (!d) throw new ReglaOficina(`No existe la decisión ${a.decision_id}`);
-    if (d.estado !== "pendiente") throw new ReglaOficina(`La decisión ${a.decision_id} ya fue respondida (${d.estado}).`);
-    await this.db.query(
-      "UPDATE decisiones SET estado = $2, comentario = $3, decidido_via = $4, decidido_en = now() WHERE id = $1",
-      [a.decision_id, a.estado, a.comentario ?? null, a.via],
-    );
-    if (a.estado === "devuelta") await this.cambiarEstado(d.encargo_id, "en_curso");
-    await this.evento(d.encargo_id, a.estado === "aprobada" ? "decision_aprobada" : "decision_devuelta", "ariel", {
-      decision_id: a.decision_id,
-      via: a.via,
-    });
-    return { decision_id: a.decision_id, estado: a.estado };
+    return responderDecision(this.db, a);
   }
 
   /**
