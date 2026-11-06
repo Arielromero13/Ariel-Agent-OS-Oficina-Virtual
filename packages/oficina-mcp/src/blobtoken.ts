@@ -10,7 +10,7 @@ export function tokenBlob(env: NodeJS.ProcessEnv = process.env): string | undefi
   const directo = env.BLOB_READ_WRITE_TOKEN;
   if (directo && directo.trim() !== "") return directo;
   for (const [nombre, valor] of Object.entries(env)) {
-    if (/_READ_WRITE_TOKEN$/.test(nombre) && typeof valor === "string" && FORMA_TOKEN.test(valor)) return valor;
+    if (/_READ_WRITE_TOKEN$/i.test(nombre) && typeof valor === "string" && FORMA_TOKEN.test(valor)) return valor;
   }
   return undefined;
 }

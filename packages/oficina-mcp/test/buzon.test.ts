@@ -165,6 +165,7 @@ import { tokenBlob } from "../src/blobtoken.js";
 test("el token de Blob se detecta aunque la integración use un prefijo distinto", () => {
   assert.equal(tokenBlob({ BLOB_READ_WRITE_TOKEN: "vercel_blob_rw_a_b" } as never), "vercel_blob_rw_a_b");
   assert.equal(tokenBlob({ STORAGE_READ_WRITE_TOKEN: "vercel_blob_rw_c_d" } as never), "vercel_blob_rw_c_d");
+  assert.equal(tokenBlob({ Blob_Storage_READ_WRITE_TOKEN: "vercel_blob_rw_e_f" } as never), "vercel_blob_rw_e_f", "prefijo con mayúsculas y minúsculas");
   assert.equal(tokenBlob({ OTRA_READ_WRITE_TOKEN: "no-es-de-blob" } as never), undefined, "ignora variables que no tienen forma de token de Blob");
   assert.equal(tokenBlob({ PATH: "/bin" } as never), undefined);
 });
