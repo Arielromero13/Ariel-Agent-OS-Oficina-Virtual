@@ -114,7 +114,7 @@ function Aviso({ estado, conexion }: { estado: EstadoOficina | null; conexion: "
   if (conexion === "error") return <p className="aviso">Sin conexión con el servidor. Reintentando…</p>;
   if (!estado) return null;
   if (estado.base === "sin_configurar")
-    return <p className="aviso">Estado compartido no configurado: falta DATABASE_URL (o STORAGE_URL) en el servidor.</p>;
+    return <p className="aviso">Estado compartido no configurado: el servidor no ve ninguna variable con una cadena de conexión de Postgres. Revisa que la base esté conectada a este proyecto en Production y vuelve a desplegar.</p>;
   if (estado.base === "sin_migrar")
     return <p className="aviso">La base de datos existe pero no tiene tablas. Ejecuta la migración de oficina-mcp.</p>;
   if (estado.base === "error") return <p className="aviso">Error al leer el estado: {estado.detalle}</p>;
