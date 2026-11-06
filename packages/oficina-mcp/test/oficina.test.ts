@@ -139,3 +139,13 @@ test("cada acción deja eventos para la escena", async () => {
     ["encargo_abierto", "plan_propuesto", "agente_convocado", "agente_trabajando", "resultado_entregado"],
   );
 });
+
+test("las migraciones se pueden aplicar dos veces y las fichas se sincronizan sin duplicar", async () => {
+  const db = await nuevaBase();
+  const { aplicarMigraciones } = await import("../src/esquema.js");
+  await aplicarMigraciones(db);
+  const oficina = new Oficina(db, { env: {} });
+  await oficina.sincronizarFichas();
+  await oficina.sincronizarFichas();
+  assert.equal((await db.query("SELECT * FROM fichas")).rows.length, 4);
+});

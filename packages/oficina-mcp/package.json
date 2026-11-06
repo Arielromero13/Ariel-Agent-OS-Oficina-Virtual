@@ -22,6 +22,8 @@
     "typescript": "^7.0.2"
   },
   "exports": {
-    "./decisiones": "./src/decisiones.ts"
+    "./decisiones": "./src/decisiones.ts",
+    "./esquema": "./src/esquema.ts",
+    "./conexion": "./src/conexion.ts"
   }
 }

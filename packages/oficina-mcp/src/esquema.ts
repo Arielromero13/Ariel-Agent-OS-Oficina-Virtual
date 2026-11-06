@@ -1,3 +1,19 @@
+/**
+ * Esquema del estado compartido y carga de fichas. Sin acceso al sistema de archivos, para que
+ * lo usen tanto oficina-mcp como la oficina web (botón "Preparar base de datos").
+ */
+
+export interface Consultable {
+  query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
+  /** Ejecuta varias sentencias a la vez. Si no existe, se usa query sin parámetros (pg lo permite). */
+  exec?(sql: string): Promise<unknown>;
+}
+
+/** Migraciones en orden. Todas son idempotentes (IF NOT EXISTS). Para cambiar el esquema, agrega una nueva. */
+export const MIGRACIONES: { nombre: string; sql: string }[] = [
+  {
+    nombre: "001_estado_inicial",
+    sql: `
 -- Estado compartido de la Oficina Virtual (tramo 1).
 -- Lo escribe oficina-mcp; la oficina web lo lee y solo escribe decisiones de Ariel.
 
@@ -129,3 +145,46 @@ CREATE TABLE IF NOT EXISTS eventos (
 
 CREATE INDEX IF NOT EXISTS eventos_por_encargo ON eventos (encargo_id, id);
 CREATE INDEX IF NOT EXISTS decisiones_pendientes ON decisiones (estado) WHERE estado = 'pendiente';
+`,
+  },
+];
+
+export async function aplicarMigraciones(db: Consultable): Promise<string[]> {
+  for (const m of MIGRACIONES) await (db.exec ? db.exec(m.sql) : db.query(m.sql));
+  return MIGRACIONES.map((m) => m.nombre);
+}
+
+export interface Ficha {
+  id: string;
+  nombre: string;
+  especialidad: string;
+  resumen: string;
+  proveedor: string;
+  modelo: string;
+  instrucciones: string;
+  version?: number;
+  [k: string]: unknown;
+}
+
+const CAMPOS_FICHA = ["id", "nombre", "especialidad", "resumen", "proveedor", "modelo", "instrucciones"] as const;
+
+/** Copia las fichas al estado compartido para que la oficina las muestre. */
+export async function sincronizarFichasEn(db: Consultable, fichas: { origen: string; ficha: Ficha }[]): Promise<string[]> {
+  const ids: string[] = [];
+  for (const { origen, ficha } of fichas) {
+    for (const campo of CAMPOS_FICHA) {
+      if (typeof ficha[campo] !== "string" || ficha[campo] === "") {
+        throw new Error(`La ficha ${origen} no tiene el campo obligatorio "${campo}"`);
+      }
+    }
+    await db.query(
+      `INSERT INTO fichas (id, nombre, especialidad, resumen, proveedor, modelo, contenido, version, activa)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, TRUE)
+       ON CONFLICT (id) DO UPDATE SET nombre = $2, especialidad = $3, resumen = $4, proveedor = $5,
+         modelo = $6, contenido = $7, version = $8, activa = TRUE, actualizado = now()`,
+      [ficha.id, ficha.nombre, ficha.especialidad, ficha.resumen, ficha.proveedor, ficha.modelo, JSON.stringify(ficha), ficha.version ?? 1],
+    );
+    ids.push(ficha.id);
+  }
+  return ids;
+}

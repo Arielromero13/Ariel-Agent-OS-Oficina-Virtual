@@ -14,7 +14,7 @@ Las claves de Qwen y DeepSeek nunca se configuran en Vercel. La oficina web solo
 
 1. En Vercel, Marketplace → Neon → crear la base y conectarla al proyecto `oficina-web`. Eso agrega `DATABASE_URL` al proyecto.
 2. Copiar esa misma `DATABASE_URL` a los secretos del entorno donde corre el Orquestador (o a `.env` en la máquina local).
-3. Crear las tablas: `npm run migrar -w oficina-mcp` (el servidor MCP también las crea al arrancar).
+3. Crear las tablas: abrir la oficina con tu usuario y tocar **Preparar base de datos** (o `npm run migrar -w oficina-mcp` desde una máquina que llegue a la base). Es idempotente.
 4. Definir `OFICINA_USUARIO` y `OFICINA_CLAVE` en las variables del proyecto en Vercel y volver a desplegar.
 5. Abrir la URL del proyecto en la tablet y agregarla a la pantalla de inicio.
 
