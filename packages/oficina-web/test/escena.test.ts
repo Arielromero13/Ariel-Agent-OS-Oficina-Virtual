@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { derivarEscena, type EncargoVista, type Evento, type FichaVista } from "../lib/escena";
 
 const fichas: FichaVista[] = [
-  { id: "extractor-datos", nombre: "Extractor", especialidad: "", proveedor: "qwen", modelo: "qwen-plus", configurado: true },
-  { id: "redactor-tecnico", nombre: "Redactor", especialidad: "", proveedor: "deepseek", modelo: "deepseek-chat", configurado: false },
+  { id: "extractor-datos", nombre: "Extractor", especialidad: "", proveedor: "qwen", modelo: "qwen-plus", configurado: true, respaldo_nativo: false },
+  { id: "redactor-tecnico", nombre: "Redactor", especialidad: "", proveedor: "deepseek", modelo: "deepseek-chat", configurado: false, respaldo_nativo: false },
 ];
 const encargo = (estado: EncargoVista["estado"]): EncargoVista => ({
   id: "enc_1", titulo: "PQ", descripcion: "", estado, sensibilidad: "externo", version_actual: 1,
@@ -34,15 +34,6 @@ test("los estados de los agentes siguen a los eventos", () => {
   assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["extractor-datos"], "Relevo nativo");
 });
 
-test("una ficha sin clave convocada en relevo nativo pasa a Relevo nativo", () => {
-  const eventos = [ev("agente_convocado", "rrhh", { ficha_id: "redactor-tecnico" })];
-  assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["redactor-tecnico"], "No configurado");
-  eventos.push(ev("agente_convocado", "rrhh", { ficha_id: "redactor-tecnico", modo: "relevo_nativo" }));
-  assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["redactor-tecnico"], "Convocado");
-  eventos.push(ev("relevo_nativo_iniciado", "redactor-tecnico", { proveedor: "deepseek", motivo: "no_configurado" }));
-  assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["redactor-tecnico"], "Relevo nativo");
-});
-
 test("con decisión pendiente el Orquestador espera a Ariel y hay carpeta en la Mesa de revisión", () => {
   const e = derivarEscena(fichas, encargo("en_revision"), [], 1);
   assert.equal(e.orquestador, "Esperando a Ariel");
@@ -55,4 +46,10 @@ test("al cerrar el encargo los agentes vuelven a reposo", () => {
   assert.equal(e.agentes["extractor-datos"], "En reposo");
   assert.equal(e.agentes["redactor-tecnico"], "No configurado");
   assert.equal(e.orquestador, "Completado");
+});
+
+test("una ficha sin clave con respaldo nativo queda disponible, no No configurado", () => {
+  const conRespaldo = fichas.map((f) => (f.configurado ? f : { ...f, respaldo_nativo: true }));
+  const e = derivarEscena(conRespaldo, null, [], 0);
+  assert.equal(e.agentes["redactor-tecnico"], "En reposo");
 });

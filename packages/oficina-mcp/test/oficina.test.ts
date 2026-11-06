@@ -26,66 +26,20 @@ async function preparar(env: NodeJS.ProcessEnv, f: Fetch = respuestaOk) {
   return { db, oficina };
 }
 
-test("criterio 1: sin clave de DeepSeek su ficha queda No configurado y solo entra al plan como relevo nativo", async () => {
-  const { db, oficina } = await preparar({ QWEN_API_KEY: "q" });
+test("criterio 1: con el respaldo nativo apagado, sin clave de DeepSeek su ficha queda No configurado y el plan no la acepta", async () => {
+  const { db, oficina } = await preparar({ QWEN_API_KEY: "q", OFICINA_RESPALDO_NATIVO: "0" });
   const { rows } = await db.query<{ id: string; configurado: boolean }>("SELECT id, configurado FROM proveedores ORDER BY id");
   assert.deepEqual(rows, [
     { id: "deepseek", configurado: false },
     { id: "qwen", configurado: true },
   ]);
-
-  // Relevo desactivado: la ficha sin clave se rechaza.
-  const sinRelevo = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo", relevo_nativo: false });
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
   await assert.rejects(
-    oficina.proponerPlan({ encargo_id: sinRelevo.encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] }),
+    oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] }),
     ReglaOficina,
   );
-
-  // Relevo permitido (por defecto): entra en modo relevo nativo; la ficha con clave va por API.
-  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
-  const ok = await oficina.proponerPlan({
-    encargo_id,
-    plan: "x",
-    equipo: [
-      { ficha_id: "extractor-datos", tarea: "extraer" },
-      { ficha_id: "redactor-tecnico", tarea: "redactar" },
-    ],
-  });
-  assert.deepEqual(ok.miembros, [
-    { ficha_id: "extractor-datos", modo: "api", proveedor: "qwen" },
-    { ficha_id: "redactor-tecnico", modo: "relevo_nativo", proveedor: "deepseek" },
-  ]);
-});
-
-test("sin clave, despachar no llama al proveedor y pasa la subtarea a la sesión nativa", async () => {
-  let llamadas = 0;
-  const contar: Fetch = async (...args) => {
-    llamadas++;
-    return respuestaOk(...args);
-  };
-  const { db, oficina } = await preparar({}, contar);
-  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
-  const r = await oficina.despachar({ encargo_id, ficha_id: "redactor-tecnico", instrucciones: "Redacta" });
-  assert.equal(r.estado, "relevo_nativo");
-  assert.equal(llamadas, 0);
-  assert.equal((await db.query("SELECT * FROM llamadas")).rows.length, 0, "no se registra una llamada que no ocurrió");
-  assert.equal((await db.query("SELECT * FROM resultados")).rows.length, 0, "el relevo no fabrica texto");
-  const ev = await db.query<{ tipo: string }>("SELECT tipo FROM eventos WHERE actor = 'redactor-tecnico'");
-  assert.deepEqual(ev.rows.map((e) => e.tipo), ["relevo_nativo_iniciado"]);
-
-  const res = await oficina.registrarResultado({
-    encargo_id,
-    ficha_id: "redactor-tecnico",
-    contenido: "Texto del subagente nativo",
-    proveedor_original: "deepseek",
-    motivo: "no_configurado",
-    modelo_nativo: "modelo-de-la-sesion",
-  });
-  assert.equal(res.revision_para, "ariel");
-
-  const sinRelevo = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo", relevo_nativo: false });
-  const r2 = await oficina.despachar({ encargo_id: sinRelevo.encargo_id, ficha_id: "redactor-tecnico", instrucciones: "Redacta" });
-  assert.equal(r2.estado, "no_configurado");
+  const ok = await oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "extractor-datos", tarea: "extraer" }] });
+  assert.equal(ok.equipo, 1);
 });
 
 test("criterio 2: sin saldo, despachar devuelve sin_cuota y el relevo nativo queda registrado", async () => {
@@ -194,4 +148,75 @@ test("las migraciones se pueden aplicar dos veces y las fichas se sincronizan si
   await oficina.sincronizarFichas();
   await oficina.sincronizarFichas();
   assert.equal((await db.query("SELECT * FROM fichas")).rows.length, 4);
+});
+
+test("respaldo nativo: sin clave, la ficha se ejecuta como subagente de la sesión sin llamar a ningún modelo", async () => {
+  let llamado = false;
+  const { db, oficina } = await preparar({ QWEN_API_KEY: "q" }, async () => {
+    llamado = true;
+    return new Response("{}");
+  });
+  const prov = await db.query<{ id: string; configurado: boolean; respaldo_nativo: boolean }>(
+    "SELECT id, configurado, respaldo_nativo FROM proveedores ORDER BY id",
+  );
+  assert.deepEqual(prov.rows, [
+    { id: "deepseek", configurado: false, respaldo_nativo: true },
+    { id: "qwen", configurado: true, respaldo_nativo: false },
+  ]);
+
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
+  const plan = await oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] });
+  assert.equal(plan.equipo, 1);
+
+  const r = await oficina.despachar({ encargo_id, ficha_id: "redactor-tecnico", instrucciones: "Redacta", contexto: "THD 3,1 %" });
+  assert.equal(r.estado, "resolver_en_sesion");
+  assert.equal(llamado, false, "no se llama a ninguna API");
+  assert.ok("subagente" in r && r.subagente?.tarea.includes("THD 3,1 %"));
+  assert.equal((await db.query("SELECT * FROM llamadas")).rows.length, 0, "no hay llamada por API que registrar");
+  assert.equal((await db.query("SELECT * FROM resultados")).rows.length, 0, "el despacho no fabrica texto");
+
+  const res = await oficina.registrarResultado({
+    encargo_id,
+    ficha_id: "redactor-tecnico",
+    contenido: "Texto del subagente",
+    proveedor_original: "deepseek",
+    motivo: "sin_clave",
+    modelo_nativo: "claude",
+  });
+  assert.equal(res.revision_para, "ariel");
+});
+
+test("respaldo nativo: no aplica si el encargo desactiva el relevo nativo", async () => {
+  const { oficina } = await preparar({});
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo", relevo_nativo: false });
+  await assert.rejects(
+    oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] }),
+    ReglaOficina,
+  );
+  await assert.rejects(oficina.despachar({ encargo_id, ficha_id: "redactor-tecnico", instrucciones: "x" }), ReglaOficina);
+});
+
+test("respaldo nativo: un encargo interno acepta subagentes de la sesión pero no fichas por API", async () => {
+  const { oficina } = await preparar({ QWEN_API_KEY: "q" });
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "Interno", descripcion: "Datos de planta", sensibilidad: "interno" });
+  await assert.rejects(
+    oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "extractor-datos", tarea: "extraer" }] }),
+    ReglaOficina,
+  );
+  await oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] });
+  const r = await oficina.despachar({ encargo_id, ficha_id: "redactor-tecnico", instrucciones: "x" });
+  assert.equal(r.estado, "resolver_en_sesion");
+});
+
+test("al responder la última decisión pendiente el encargo vuelve al Orquestador", async () => {
+  const { db, oficina } = await preparar({});
+  const estado = async (id: string) =>
+    (await db.query<{ estado: string }>("SELECT estado FROM encargos WHERE id = $1", [id])).rows[0].estado;
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
+  const d1 = await oficina.pedirDecision({ encargo_id, tipo: "resultado", pregunta: "¿Parte 1?" });
+  const d2 = await oficina.pedirDecision({ encargo_id, tipo: "resultado", pregunta: "¿Parte 2?" });
+  await oficina.responderDecision({ decision_id: d1.decision_id, estado: "aprobada", via: "web" });
+  assert.equal(await estado(encargo_id), "en_revision", "queda otra decisión pendiente");
+  await oficina.responderDecision({ decision_id: d2.decision_id, estado: "aprobada", via: "web" });
+  assert.equal(await estado(encargo_id), "en_curso");
 });

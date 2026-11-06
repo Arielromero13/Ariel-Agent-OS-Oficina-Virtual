@@ -41,9 +41,14 @@ export async function responderDecision(
     [a.decision_id, a.estado, a.comentario ?? null, a.via],
   );
   if (!r.rows[0]) throw new ReglaOficina(`La decisión ${a.decision_id} ya fue respondida.`);
-  if (a.estado === "devuelta") {
-    await db.query("UPDATE encargos SET estado = 'en_curso', actualizado = now() WHERE id = $1", [d.encargo_id]);
-  }
+  // Respondida la última decisión pendiente, el turno vuelve al Orquestador (aprobada o devuelta).
+  // Si quedan otras pendientes, el encargo sigue esperando a Ariel.
+  await db.query(
+    `UPDATE encargos SET estado = 'en_curso', actualizado = now()
+     WHERE id = $1 AND estado = 'en_revision'
+       AND NOT EXISTS (SELECT 1 FROM decisiones WHERE encargo_id = $1 AND estado = 'pendiente')`,
+    [d.encargo_id],
+  );
   await registrarEvento(db, d.encargo_id, a.estado === "aprobada" ? "decision_aprobada" : "decision_devuelta", "ariel", {
     decision_id: a.decision_id,
     via: a.via,

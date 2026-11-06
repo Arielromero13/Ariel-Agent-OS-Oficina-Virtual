@@ -2,14 +2,12 @@
   "mcpServers": {
     "oficina-mcp": {
       "command": "npx",
-      "args": [
-        "tsx",
-        "packages/oficina-mcp/src/index.ts"
-      ],
+      "args": ["tsx", "packages/oficina-mcp/src/index.ts"],
       "env": {
         "DATABASE_URL": "${DATABASE_URL}",
         "QWEN_API_KEY": "${QWEN_API_KEY:-}",
         "DEEPSEEK_API_KEY": "${DEEPSEEK_API_KEY:-}",
+        "OFICINA_RESPALDO_NATIVO": "${OFICINA_RESPALDO_NATIVO:-1}",
         "NODE_USE_ENV_PROXY": "1"
       }
     }

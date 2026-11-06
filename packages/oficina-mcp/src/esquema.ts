@@ -147,6 +147,13 @@ CREATE INDEX IF NOT EXISTS eventos_por_encargo ON eventos (encargo_id, id);
 CREATE INDEX IF NOT EXISTS decisiones_pendientes ON decisiones (estado) WHERE estado = 'pendiente';
 `,
   },
+  {
+    nombre: "002_respaldo_nativo",
+    sql: `
+-- Un proveedor sin clave puede tener sus fichas cubiertas por subagentes de la sesión nativa.
+ALTER TABLE proveedores ADD COLUMN IF NOT EXISTS respaldo_nativo BOOLEAN NOT NULL DEFAULT FALSE;
+`,
+  },
 ];
 
 /**
