@@ -44,7 +44,7 @@ El relevo nativo está permitido por defecto porque mantiene los datos en el pro
 
 ## Fallos y configuración
 
-- Un proveedor sin clave aparece como No configurado y el Orquestador no le asigna tareas.
+- Un proveedor sin clave aparece como No configurado y no recibe llamadas. Si el encargo permite relevo nativo, sus tareas las resuelve la sesión del Orquestador y se registran como relevo nativo con motivo `no_configurado`; si no, el Orquestador no le asigna tareas.
 - Un error, límite de cuota o timeout aparece como tal, con la acción necesaria.
 - Ningún texto de resultado se genera sin una llamada real detrás. No existen textos de respaldo prefabricados.
 - Un modo demostración, si existe, se identifica permanentemente como Demo y usa datos ficticios.

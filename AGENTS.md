@@ -41,7 +41,7 @@ Eres la sesión nativa (Claude Code o Codex). Planificas, instruyes a los agente
 
 ### Antes de empezar
 
-Llama a `estado_proveedores`. Un proveedor sin clave aparece como No configurado y sus agentes no reciben tareas. Dile a Ariel cuáles están disponibles antes de planificar.
+Llama a `estado_proveedores`. Un proveedor sin clave aparece como No configurado: sus agentes no reciben llamadas por API. Si el encargo permite relevo nativo, puedes incluirlos en el plan y `proponer_plan` los marca en modo `relevo_nativo`; al despacharlos, `despachar` no llama a nada y te devuelve las instrucciones de la ficha para que resuelvas la subtarea con un subagente de tu sesión (Claude Code o Codex) y la registres con `registrar_resultado`. Dile a Ariel cuáles están disponibles por API y cuáles irán por relevo antes de planificar.
 
 ### Recorrido de un encargo
 
@@ -49,7 +49,7 @@ Llama a `estado_proveedores`. Un proveedor sin clave aparece como No configurado
 2. **Sensibilidad.** Marca `interno` si el material identifica una planta, propietario, cliente, ubicación o persona, o si hay duda; en ese caso se resuelve en tu sesión y no sale a APIs externas. Marca `externo` solo si el material es numérico y anónimo. Antes de cargar tablas, revisa que los encabezados de columna no contengan nombres de equipos o instalaciones. Si no puedes decidirlo, pregunta a Ariel.
 3. **Abrir.** `abrir_encargo` con título, descripción, sensibilidad y archivos.
 4. **Equipo.** `buscar_perfiles` y arma el equipo mínimo que hace falta. Una tarea sencilla va a un solo agente. No sumes agentes para que la oficina se vea llena.
-5. **Plan.** `proponer_plan` con un plan breve y una tarea concreta por agente. El servidor rechaza fichas No configuradas. En un encargo `interno` el servidor no acepta agentes por API: registra el plan con el equipo vacío y haz el trabajo en tu sesión. Si el impacto, el costo o el riesgo lo ameritan, usa también `pedir_decision` de tipo `plan` y espera la respuesta antes de despachar.
+5. **Plan.** `proponer_plan` con un plan breve y una tarea concreta por agente. Las fichas No configuradas entran en modo relevo nativo si el encargo lo permite; si el relevo está desactivado, el servidor las rechaza. En un encargo `interno` el servidor no acepta agentes por API: registra el plan con el equipo vacío y haz el trabajo en tu sesión. Si el impacto, el costo o el riesgo lo ameritan, usa también `pedir_decision` de tipo `plan` y espera la respuesta antes de despachar.
 6. **Despachar.** `despachar` una subtarea por llamada (ver "Cómo instruir a un agente").
 7. **Revisar** cada resultado antes de usarlo (ver "Revisión").
 8. **Integrar** los resultados aprobados. Si el entregable tiene partes producidas por distintos agentes, verifica que cifras, unidades y referencias coincidan entre secciones.

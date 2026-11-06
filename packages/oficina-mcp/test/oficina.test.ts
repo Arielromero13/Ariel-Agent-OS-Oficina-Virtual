@@ -26,20 +26,66 @@ async function preparar(env: NodeJS.ProcessEnv, f: Fetch = respuestaOk) {
   return { db, oficina };
 }
 
-test("criterio 1: sin clave de DeepSeek su ficha queda No configurado y el plan no la acepta", async () => {
+test("criterio 1: sin clave de DeepSeek su ficha queda No configurado y solo entra al plan como relevo nativo", async () => {
   const { db, oficina } = await preparar({ QWEN_API_KEY: "q" });
   const { rows } = await db.query<{ id: string; configurado: boolean }>("SELECT id, configurado FROM proveedores ORDER BY id");
   assert.deepEqual(rows, [
     { id: "deepseek", configurado: false },
     { id: "qwen", configurado: true },
   ]);
-  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
+
+  // Relevo desactivado: la ficha sin clave se rechaza.
+  const sinRelevo = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo", relevo_nativo: false });
   await assert.rejects(
-    oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] }),
+    oficina.proponerPlan({ encargo_id: sinRelevo.encargo_id, plan: "x", equipo: [{ ficha_id: "redactor-tecnico", tarea: "redactar" }] }),
     ReglaOficina,
   );
-  const ok = await oficina.proponerPlan({ encargo_id, plan: "x", equipo: [{ ficha_id: "extractor-datos", tarea: "extraer" }] });
-  assert.equal(ok.equipo, 1);
+
+  // Relevo permitido (por defecto): entra en modo relevo nativo; la ficha con clave va por API.
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
+  const ok = await oficina.proponerPlan({
+    encargo_id,
+    plan: "x",
+    equipo: [
+      { ficha_id: "extractor-datos", tarea: "extraer" },
+      { ficha_id: "redactor-tecnico", tarea: "redactar" },
+    ],
+  });
+  assert.deepEqual(ok.miembros, [
+    { ficha_id: "extractor-datos", modo: "api", proveedor: "qwen" },
+    { ficha_id: "redactor-tecnico", modo: "relevo_nativo", proveedor: "deepseek" },
+  ]);
+});
+
+test("sin clave, despachar no llama al proveedor y pasa la subtarea a la sesión nativa", async () => {
+  let llamadas = 0;
+  const contar: Fetch = async (...args) => {
+    llamadas++;
+    return respuestaOk(...args);
+  };
+  const { db, oficina } = await preparar({}, contar);
+  const { encargo_id } = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo" });
+  const r = await oficina.despachar({ encargo_id, ficha_id: "redactor-tecnico", instrucciones: "Redacta" });
+  assert.equal(r.estado, "relevo_nativo");
+  assert.equal(llamadas, 0);
+  assert.equal((await db.query("SELECT * FROM llamadas")).rows.length, 0, "no se registra una llamada que no ocurrió");
+  assert.equal((await db.query("SELECT * FROM resultados")).rows.length, 0, "el relevo no fabrica texto");
+  const ev = await db.query<{ tipo: string }>("SELECT tipo FROM eventos WHERE actor = 'redactor-tecnico'");
+  assert.deepEqual(ev.rows.map((e) => e.tipo), ["relevo_nativo_iniciado"]);
+
+  const res = await oficina.registrarResultado({
+    encargo_id,
+    ficha_id: "redactor-tecnico",
+    contenido: "Texto del subagente nativo",
+    proveedor_original: "deepseek",
+    motivo: "no_configurado",
+    modelo_nativo: "modelo-de-la-sesion",
+  });
+  assert.equal(res.revision_para, "ariel");
+
+  const sinRelevo = await oficina.abrirEncargo({ titulo: "PQ", descripcion: "Prueba", sensibilidad: "externo", relevo_nativo: false });
+  const r2 = await oficina.despachar({ encargo_id: sinRelevo.encargo_id, ficha_id: "redactor-tecnico", instrucciones: "Redacta" });
+  assert.equal(r2.estado, "no_configurado");
 });
 
 test("criterio 2: sin saldo, despachar devuelve sin_cuota y el relevo nativo queda registrado", async () => {

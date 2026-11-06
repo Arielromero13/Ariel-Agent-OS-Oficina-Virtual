@@ -133,31 +133,49 @@ export class Oficina {
     };
   }
 
+  /**
+   * Registra el plan y el equipo. Una ficha cuyo proveedor no tiene clave entra en modo
+   * relevo nativo si el encargo lo permite: la resuelve un subagente de la sesión del
+   * Orquestador (Claude Code o Codex) y queda registrada como tal. Si el relevo está
+   * desactivado, la ficha se rechaza.
+   */
   async proponerPlan(a: { encargo_id: string; plan: string; equipo: { ficha_id: string; tarea: string }[] }) {
     const enc = await this.encargo(a.encargo_id);
+    const equipo: { ficha_id: string; tarea: string; modo: "api" | "relevo_nativo"; proveedor: string }[] = [];
     for (const miembro of a.equipo) {
       const ficha = await this.ficha(miembro.ficha_id);
-      if (!claveDe(ficha.proveedor, this.env)) {
-        throw new ReglaOficina(
-          `La ficha ${ficha.id} usa ${ficha.proveedor}, que está No configurado. No se le pueden asignar tareas.`,
-        );
-      }
       if (enc.sensibilidad === "interno") {
         throw new ReglaOficina(
           `El encargo ${enc.id} es interno: no se envía a APIs externas. Resuélvelo en la sesión nativa.`,
         );
       }
+      const configurado = claveDe(ficha.proveedor, this.env) !== undefined;
+      if (!configurado && !enc.relevo_nativo) {
+        throw new ReglaOficina(
+          `La ficha ${ficha.id} usa ${ficha.proveedor}, que está No configurado, y el relevo nativo está desactivado en este encargo. No se le pueden asignar tareas.`,
+        );
+      }
+      equipo.push({ ...miembro, modo: configurado ? "api" : "relevo_nativo", proveedor: ficha.proveedor });
     }
     await this.db.query(
       "UPDATE encargo_versiones SET plan = $3, equipo = $4 WHERE encargo_id = $1 AND version = $2",
-      [enc.id, enc.version_actual, JSON.stringify({ texto: a.plan }), JSON.stringify(a.equipo)],
+      [enc.id, enc.version_actual, JSON.stringify({ texto: a.plan }), JSON.stringify(equipo)],
     );
     await this.cambiarEstado(enc.id, "en_curso");
-    await this.evento(enc.id, "plan_propuesto", "orquestador", { equipo: a.equipo });
-    for (const miembro of a.equipo) {
-      await this.evento(enc.id, "agente_convocado", "rrhh", { ficha_id: miembro.ficha_id, tarea: miembro.tarea });
+    await this.evento(enc.id, "plan_propuesto", "orquestador", { equipo });
+    for (const miembro of equipo) {
+      await this.evento(enc.id, "agente_convocado", "rrhh", {
+        ficha_id: miembro.ficha_id,
+        tarea: miembro.tarea,
+        modo: miembro.modo,
+      });
     }
-    return { encargo_id: enc.id, version: enc.version_actual, equipo: a.equipo.length };
+    return {
+      encargo_id: enc.id,
+      version: enc.version_actual,
+      equipo: equipo.length,
+      miembros: equipo.map(({ ficha_id, modo, proveedor }) => ({ ficha_id, modo, proveedor })),
+    };
   }
 
   async despachar(a: { encargo_id: string; ficha_id: string; instrucciones: string; contexto?: string }) {
@@ -166,6 +184,29 @@ export class Oficina {
       throw new ReglaOficina(`El encargo ${enc.id} es interno: no se envía a APIs externas.`);
     }
     const ficha = await this.ficha(a.ficha_id);
+
+    // Sin clave no hay llamada: con relevo permitido, la subtarea pasa a la sesión nativa.
+    if (!claveDe(ficha.proveedor, this.env)) {
+      if (!enc.relevo_nativo) {
+        return {
+          estado: "no_configurado" as const,
+          detalle: `Falta la clave de ${ficha.proveedor} en el entorno de oficina-mcp`,
+          relevo_nativo_permitido: false,
+          accion: "El relevo nativo está desactivado para este encargo. Informa a Ariel.",
+        };
+      }
+      await this.evento(enc.id, "relevo_nativo_iniciado", ficha.id, { proveedor: ficha.proveedor, motivo: "no_configurado" });
+      return {
+        estado: "relevo_nativo" as const,
+        motivo: "no_configurado",
+        proveedor_original: ficha.proveedor,
+        relevo_nativo_permitido: true,
+        instrucciones_ficha: ficha.instrucciones,
+        accion:
+          "Resuelve la subtarea con un subagente de tu sesión (Claude Code o Codex) usando instrucciones_ficha y tus instrucciones, y regístrala con registrar_resultado (motivo no_configurado, modelo_nativo el que reporta tu sesión).",
+      };
+    }
+
     const mensajes: Mensaje[] = [
       { role: "system", content: ficha.instrucciones },
       { role: "user", content: a.contexto ? `${a.instrucciones}\n\n---\nContexto:\n${a.contexto}` : a.instrucciones },

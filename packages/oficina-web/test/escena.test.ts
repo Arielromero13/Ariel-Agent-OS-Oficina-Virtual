@@ -34,6 +34,15 @@ test("los estados de los agentes siguen a los eventos", () => {
   assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["extractor-datos"], "Relevo nativo");
 });
 
+test("una ficha sin clave convocada en relevo nativo pasa a Relevo nativo", () => {
+  const eventos = [ev("agente_convocado", "rrhh", { ficha_id: "redactor-tecnico" })];
+  assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["redactor-tecnico"], "No configurado");
+  eventos.push(ev("agente_convocado", "rrhh", { ficha_id: "redactor-tecnico", modo: "relevo_nativo" }));
+  assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["redactor-tecnico"], "Convocado");
+  eventos.push(ev("relevo_nativo_iniciado", "redactor-tecnico", { proveedor: "deepseek", motivo: "no_configurado" }));
+  assert.equal(derivarEscena(fichas, encargo("en_curso"), eventos, 0).agentes["redactor-tecnico"], "Relevo nativo");
+});
+
 test("con decisión pendiente el Orquestador espera a Ariel y hay carpeta en la Mesa de revisión", () => {
   const e = derivarEscena(fichas, encargo("en_revision"), [], 1);
   assert.equal(e.orquestador, "Esperando a Ariel");

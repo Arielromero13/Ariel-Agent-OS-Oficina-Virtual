@@ -24,7 +24,7 @@ Demostrar con un encargo real, con datos sin información identificable, que el 
 
 ## Criterios de aceptación
 
-1. Sin clave de DeepSeek configurada, su ficha aparece como No configurado en la oficina y el plan no le asigna tareas.
+1. Sin clave de DeepSeek configurada, su ficha aparece como No configurado en la oficina y no recibe llamadas por API. Si el encargo permite relevo nativo, el plan puede asignarle la tarea en modo relevo nativo: la resuelve la sesión del Orquestador (Claude Code o Codex) y queda registrada como tal. Con el relevo desactivado, el plan no le asigna tareas.
 2. Con una clave inválida o sin saldo, `despachar` devuelve el estado de fallo; si el Orquestador usa relevo nativo, la oficina lo muestra como Relevo nativo con el proveedor original y el motivo.
 3. Cada texto de resultado visible en la oficina tiene una llamada registrada (proveedor, modelo, tokens, hora) o un registro de relevo nativo. No existe ningún texto de resultado prefabricado en el código.
 4. Ningún encargo pasa a Emitido sin una decisión de Ariel registrada.

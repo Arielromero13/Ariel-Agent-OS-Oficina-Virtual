@@ -71,9 +71,13 @@ export function derivarEscena(
     switch (e.tipo) {
       case "agente_convocado": {
         const id = String(e.datos.ficha_id ?? "");
-        if (id in agentes && agentes[id] !== "No configurado") agentes[id] = "Convocado";
+        // Una ficha sin clave solo se convoca en modo relevo nativo.
+        if (id in agentes && (agentes[id] !== "No configurado" || e.datos.modo === "relevo_nativo")) agentes[id] = "Convocado";
         break;
       }
+      case "relevo_nativo_iniciado":
+        agentes[e.actor] = "Relevo nativo";
+        break;
       case "agente_trabajando":
         agentes[e.actor] = "Analizando";
         break;
@@ -123,7 +127,9 @@ export function describirEvento(e: Evento, nombres: Record<string, string>): str
     case "plan_propuesto":
       return "El Orquestador registró el plan y el equipo";
     case "agente_convocado":
-      return `${n(e.datos.ficha_id)} convocado: ${e.datos.tarea ?? ""}`;
+      return `${n(e.datos.ficha_id)} convocado${e.datos.modo === "relevo_nativo" ? " (relevo nativo)" : ""}: ${e.datos.tarea ?? ""}`;
+    case "relevo_nativo_iniciado":
+      return `${n(e.actor)}: sin clave de ${e.datos.proveedor}, lo resuelve la sesión nativa`;
     case "agente_trabajando":
       return `${n(e.actor)} trabajando con ${e.datos.proveedor} (${e.datos.modelo})`;
     case "resultado_entregado":

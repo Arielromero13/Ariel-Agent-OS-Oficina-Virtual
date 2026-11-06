@@ -65,7 +65,7 @@ herramienta(
 
 herramienta(
   "proponer_plan",
-  "Registra el plan y el equipo del encargo. Rechaza fichas cuyo proveedor esté No configurado.",
+  "Registra el plan y el equipo del encargo. Una ficha sin clave de proveedor entra en modo relevo_nativo si el encargo lo permite; si no, se rechaza.",
   {
     encargo_id: z.string(),
     plan: z.string().min(1),
@@ -76,14 +76,14 @@ herramienta(
 
 herramienta(
   "despachar",
-  "Envía una subtarea a un agente por API. Devuelve el resultado o el estado de fallo (sin_cuota, no_configurado, error, timeout). Nunca cambia de proveedor.",
+  "Envía una subtarea a un agente por API. Devuelve el resultado o el estado de fallo (sin_cuota, no_configurado, error, timeout). Si el proveedor no tiene clave y el encargo permite relevo, devuelve estado relevo_nativo con las instrucciones de la ficha para que la resuelva la sesión nativa. Nunca cambia de proveedor.",
   { encargo_id: z.string(), ficha_id: z.string(), instrucciones: z.string().min(1), contexto: z.string().optional() },
   (a) => oficina.despachar(a),
 );
 
 herramienta(
   "registrar_resultado",
-  "Registra un resultado de relevo nativo (subagente de la sesión) tras un fallo de proveedor. Queda marcado para revisión de Ariel.",
+  "Registra un resultado de relevo nativo (subagente de la sesión Claude Code o Codex) tras un fallo de proveedor o por falta de clave. Queda marcado para revisión de Ariel.",
   {
     encargo_id: z.string(),
     ficha_id: z.string(),
