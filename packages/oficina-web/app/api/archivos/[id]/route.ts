@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { get } from "@vercel/blob";
+import { tokenBlob } from "oficina-mcp/blobtoken";
 import { sesionValida } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -17,7 +18,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   const f = rows[0];
   if (!f) return NextResponse.json({ error: "No existe el archivo" }, { status: 404 });
   const access = process.env.OFICINA_BLOB_ACCESS === "public" ? "public" : "private";
-  const r = await get(f.url, { access });
+  const r = await get(f.url, { access, token: tokenBlob() });
   if (!r || !r.stream) return NextResponse.json({ error: "El archivo no está en el almacén" }, { status: 404 });
   // ?ver=1 muestra PDF e imágenes dentro de la oficina; todo lo demás se descarga.
   const enLinea = new URL(req.url).searchParams.get("ver") === "1" && VISTA_PREVIA.test(f.tipo);

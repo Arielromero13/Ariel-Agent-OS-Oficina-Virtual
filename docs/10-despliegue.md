@@ -20,7 +20,7 @@ Las claves de Qwen y DeepSeek nunca se configuran en Vercel. La oficina web solo
 3. Crear las tablas: abrir la oficina con tu usuario y tocar **Preparar base de datos** (o `npm run migrar -w oficina-mcp` desde una máquina que llegue a la base). Es idempotente.
 4. Definir `OFICINA_USUARIO` y `OFICINA_CLAVE` en las variables del proyecto en Vercel y volver a desplegar.
 5. Abrir la URL del proyecto en la tablet y agregarla a la pantalla de inicio.
-6. Archivos: en Vercel, Storage → Blob → crear un almacén con acceso **privado** y conectarlo al proyecto `oficina-web`. Eso agrega `BLOB_READ_WRITE_TOKEN`. Copiar ese mismo token a los secretos del entorno donde corre el Orquestador, para que pueda leer adjuntos y entregar archivos. Si el almacén se creó público, definir `OFICINA_BLOB_ACCESS=public` en ambos lados.
+6. Archivos: en Vercel, Storage → Blob → crear un almacén con acceso **privado** y conectarlo al proyecto `oficina-web`. Eso agrega `BLOB_READ_WRITE_TOKEN` (o `<PREFIJO>_READ_WRITE_TOKEN` si al conectarlo elegiste un prefijo; la oficina acepta cualquiera). Copiar ese mismo token a los secretos del entorno donde corre el Orquestador, para que pueda leer adjuntos y entregar archivos. Si el almacén se creó público, definir `OFICINA_BLOB_ACCESS=public` en ambos lados.
 7. Tras actualizar a una versión con tablas nuevas, abrir la oficina y tocar **Actualizar base de datos** (o arrancar `oficina-mcp`, que migra al iniciar).
 
 Cada PR genera una vista previa en Vercel; cada merge a `main` actualiza producción.

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { tokenBlob } from "oficina-mcp/blobtoken";
 import { sesionValida } from "@/lib/auth";
 import { MAX_BYTES_SUBIDA, TIPOS_PERMITIDOS } from "@/lib/buzon";
 
@@ -11,14 +12,16 @@ export const dynamic = "force-dynamic";
  * cuando se envía el mensaje (/api/mensajes).
  */
 export async function POST(req: Request) {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return NextResponse.json({ error: "Almacén de archivos no configurado (falta BLOB_READ_WRITE_TOKEN en Vercel)" }, { status: 503 });
+  const token = tokenBlob();
+  if (!token) {
+    return NextResponse.json({ error: "Almacén de archivos no configurado (la web no ve ninguna variable *_READ_WRITE_TOKEN de Blob)" }, { status: 503 });
   }
   const body = (await req.json()) as HandleUploadBody;
   try {
     const r = await handleUpload({
       body,
       request: req,
+      token,
       onBeforeGenerateToken: async (pathname) => {
         // La subida del navegador pide el permiso con la cookie de sesión.
         if (!(await sesionValida())) throw new Error("Sesión no válida");

@@ -1,4 +1,5 @@
 import type pg from "pg";
+import { tokenBlob } from "oficina-mcp/blobtoken";
 import type { EncargoVista, Evento, FichaVista } from "./escena";
 
 export interface Resultado {
@@ -114,7 +115,7 @@ export const VACIO: Omit<EstadoOficina, "base"> = {
 
 function almacen(): Buzon["almacen"] {
   return {
-    configurado: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+    configurado: Boolean(tokenBlob()),
     acceso: process.env.OFICINA_BLOB_ACCESS === "public" ? "public" : "private",
   };
 }

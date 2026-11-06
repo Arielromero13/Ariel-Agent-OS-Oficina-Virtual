@@ -28,6 +28,7 @@
     "./decisiones": "./src/decisiones.ts",
     "./esquema": "./src/esquema.ts",
     "./conexion": "./src/conexion.ts",
-    "./precios": "./src/precios.ts"
+    "./precios": "./src/precios.ts",
+    "./blobtoken": "./src/blobtoken.ts"
   }
 }

@@ -4,6 +4,7 @@
  * OFICINA_BLOB_ACCESS=public solo si el almacén se creó público.
  */
 import { extname } from "node:path";
+import { tokenBlob } from "./blobtoken.js";
 
 export type Acceso = "private" | "public";
 
@@ -11,10 +12,7 @@ export function accesoBlob(env: NodeJS.ProcessEnv = process.env): Acceso {
   return env.OFICINA_BLOB_ACCESS === "public" ? "public" : "private";
 }
 
-export function tokenBlob(env: NodeJS.ProcessEnv = process.env): string | undefined {
-  const t = env.BLOB_READ_WRITE_TOKEN;
-  return t && t.trim() !== "" ? t : undefined;
-}
+export { tokenBlob };
 
 export interface Almacen {
   subir(ruta: string, contenido: Buffer, tipo: string): Promise<{ url: string }>;
